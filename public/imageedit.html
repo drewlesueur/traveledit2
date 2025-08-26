@@ -1,0 +1,447 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, max-scale=1">
+<style>
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#c {
+    position: absolute;
+    image-rendering: pixelated;
+}
+#c2 {
+    position: absolute;
+    image-rendering: pixelated;
+    background-color: white;
+}
+#w {
+    --border: 1px solid pink;
+    background-color: gray;
+}
+.toolbar {
+    display: flex;
+    flex-flow: row nowrap;
+    overflow: scroll;
+    -webkit-overflow-scrolling: touch;
+}
+.tool {
+    border: 1px solid;
+    width: 50px;
+    height: 50px;
+    padding: 0px;
+    width: 40px;
+    height: 34px;
+    margin: 1px;
+    flex: 1 0 auto;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+</style>
+
+<div id=w>
+    <canvas id=c2></canvas>
+    <canvas id=c></canvas>
+</div>
+
+<div class=toolbar>
+    <div class=tool>Cursor</div>
+    <div class=tool>Zoom In</div>
+    <div class=tool>Zoom Out</div>
+    <div class=tool>Brush</div>
+    <div class=tool>Erase</div>
+    <div class=tool>Fill</div>
+    <div class=tool onclick=redraw()>Redraw</div>
+    <!-- tapping on edges will pan -->
+</div>
+<!--<div class=toolbar>
+    <div class=tool onclick=demoLine()>demo line</div>
+</div>
+-->
+<div class=toolbar>
+    <div style="background-color: red;" class=tool onclick=setColor("red")></div>
+    <div style="background-color: orange;" class=tool onclick=setColor("orange")></div>
+    <div style="background-color: yellow;" class=tool onclick=setColor("yellow")></div>
+    <div style="background-color: blue;" class=tool onclick=setColor("blue")></div>
+    <div style="background-color: lime;" class=tool onclick=setColor("lime")></div>
+    <div style="background-color: magenta;" class=tool onclick=setColor("magenta")></div>
+    <div style="background-color: cyan;" class=tool onclick=setColor("cyan")></div>
+</div>
+<div class=toolbar>
+    <div style="background-color: green;" class=tool onclick=setColor("green")></div>
+    <div style="background-color: navy;" class=tool onclick=setColor("navy")></div>
+    <div style="background-color: brown;" class=tool onclick=setColor("brown")></div>
+    <div style="background-color: pink;" class=tool onclick=setColor("pink")></div>
+    <div style="background-color: purple;" class=tool onclick=setColor("purple")></div>
+    <div style="background-color: white;" class=tool onclick=setColor("white")></div>
+    <div style="background-color: black;" class=tool onclick=setColor("black")></div>
+</div>
+<div class=toolbar>
+    <input id=brushRangeEl oninput="setBrushSize(this.value)" style="width: 100%; height: 40px;" type=range min=0 max=100>
+</div>
+<div class=toolbar>
+    <input id=brushTextEl oninput="setBrushSize(this.value)" style="width: 100%; height: 40px;">
+</div>
+<div class=toolbar>
+    <div class=tool onclick=toggleDark()>Light</div>
+</div>
+<input id=statusEl />
+<script>
+// it's important that this go in it's own script tag
+window.onerror = function(message, url, lineNumber, columnNumber, error) {
+    alert(lineNumber + ": " + message)
+}
+</script>
+<script>
+
+// this canvas is a window to the image
+// going to use my own zooming and translation
+// rendering will be series of shapes and lines, and text, etc
+//
+
+var moveTouchScaleX = 2
+var moveTouchScaleY = 2
+
+// instead of solid numbers, make this a ratio?
+var paintTouchScaleX = 1
+var paintTouchScaleY = 1
+
+
+function setColor(color) {
+    brushColor = color
+    t2.fillStyle = color
+    t2.strokeStyle = color
+    render()
+}
+
+
+
+var mode
+var paintTimeoutMillis = 400
+function setMode(theMode) {
+    mode = theMode
+    if (mode == "move") {
+        touchScaleY = moveTouchScaleX
+        touchScaleX = moveTouchScaleY
+    } else if (mode == "paint") {
+        touchScaleY = paintTouchScaleX
+        touchScaleX = paintTouchScaleY
+        
+        // draw a dot
+        t2.beginPath()
+        // t2.arc(fx.cursorX, fx.cursorY, brushSize/2, 0, 2*Math.PI, false)
+        
+        t2.arc(fx.cursorX, fx.cursorY, brushSize/2, 0, 2*Math.PI, false)
+        t2.fill()
+        fx.currentShapeIndex += 1
+        fx.layers[fx.currentLayerIndex].shapes.push({
+            type: "line",
+            brushSize: brushSize,
+            brushColor: brushColor,
+            // TODO: come back to this #remember
+            // points: [{x: x, y: y}]
+        })
+        
+    }
+    render()
+    return 
+}
+
+var canvasStyleWidth = innerWidth
+var canvasStyleHeight = innerWidth 
+
+c.style.width = canvasStyleWidth + "px"
+c.style.height = canvasStyleHeight + "px"
+c2.style.width = canvasStyleWidth + "px"
+c2.style.height = canvasStyleHeight + "px"
+
+
+w.style.width = canvasStyleWidth + "px"
+w.style.height = (canvasStyleHeight + 100) + "px"
+w.ontouchstart = onStart
+
+var t
+var t2
+
+var brushSize = 20
+var brushColor = "black"
+
+var isDark = false
+renderDark()
+// var fx = makeFile(1024, 1024)
+var fx = makeFile(1024, 1024)
+
+function setBrushSize(theBrushsize) {
+    brushSize = theBrushsize
+    brushTextEl.value = theBrushsize
+    brushRangeEl.value = theBrushsize
+    t2.lineWidth = brushSize
+    t2.lineCap = "round"
+    render()
+}
+
+function renderDark() {
+    var bgColor = "black"
+    var fgColor = "lightYellow"
+    
+    if (!isDark) {
+        bgColor = "lightYellow" 
+        fgColor = "black"
+    }
+    document.body.style.backgroundColor = bgColor
+    var toolButtons = document.querySelectorAll(".tool")
+    for (var i=0; i<toolButtons.length; i++) {
+        var toolButton = toolButtons[i]
+        toolButton.style.color = fgColor 
+        // toolButton.style.backgroundColor = bgColor 
+    }
+}
+
+function toggleDark() {
+    isDark = !isDark
+    renderDark()
+}
+
+function makeFile(width, height) {
+    c.width = width
+    c.height = height
+    c2.width = width
+    c2.height = height
+    t = c.getContext("2d")
+    if (t == null) {
+        alert("could not get canvas context for cursor")    
+    }
+    t2 = c2.getContext("2d")
+    if (t2 == null) {
+        alert("could not get canvas context for drawing")    
+    }
+    
+    return {
+        width: width,
+        height: height,
+        cursorX: 100,
+        cursorY: 100,
+        scale: 0,
+        offsetX: 0,
+        offsetY: 0,
+        currentLayerIndex: 0,
+        currentShapeIndex: -1,
+        layers: [{
+            shapes: [],
+        }]
+    }
+}
+
+var lastRender = Date.now()
+var maxFPS = 60
+var minMillisBetweenRender = Math.floor(1000/maxFPS)
+var waitingToRender = false
+function render() {
+    if (waitingToRender) {
+        // statusEl.value = "returning early: "
+        return
+    }
+    statusEl.value = "not returning early"
+    var now = Date.now()
+    var waitToRender = minMillisBetweenRender - (now - lastRender)
+    statusEl.value = "waiting: " + waitToRender
+    if (waitToRender > 0) {
+        waitingToRender = true
+        statusEl.value = "wait"
+        setTimeout(function() {
+            waitingToRender = false
+            statusEl.value = (Date.now() - lastRender)
+            render()
+        }, waitToRender)
+        return
+    }
+    c.width = c.width // a way to clear
+    // statusEl.value = "render!!!"
+    if (mode == "move") {
+        t.strokeStyle = "blue"
+    } else if (mode == "paint") {
+        t.strokeStyle = "red"
+    }
+    t.lineWidth = 5
+    // t.fillRect(fx.cursorX, fx.cursorY, 10, 10)    
+    t.beginPath()
+    t.arc(fx.cursorX, fx.cursorY, brushSize, 0, 2*Math.PI, false)
+    // t.arc(fx.cursorX, fx.cursorY, brushSize/2, 0, 2*Math.PI, false)
+    t.stroke()
+    
+    t.fillStyle = brushColor
+    t.beginPath()
+    t.arc(fx.cursorX, fx.cursorY, brushSize/2, 0, 2*Math.PI, false)
+    t.fill()
+    lastRender = now          
+}
+
+
+// 
+function onStart(e) {
+    e.preventDefault()
+    
+    if (e.touches.length == 2) {
+        if (mode == "move") {
+            setMode("paint")
+            clearTimeout(paintModeTimeout)
+        } else if (mode == "paint") {
+            setMode("move")
+            clearTimeout(paintModeTimeout)
+        }
+    }
+    document.body.addEventListener("touchmove", onMove)
+    document.body.addEventListener("touchend", onEnd)
+    
+    fx.startTouchX = e.touches[0].pageX
+    fx.startTouchY = e.touches[0].pageY
+    fx.lastTouchX = e.touches[0].pageX
+    fx.lastTouchY = e.touches[0].pageY
+    fx.firstMove = true
+    
+    fx.startCursorX = fx.cursorX
+    fx.startCursorY = fx.cursorY
+    
+    
+    paintModeTimeout = setTimeout(function () {
+        setMode("paint")    
+    }, paintTimeoutMillis)
+    render()
+}
+
+var paintModeTimeout
+
+function onMove(e) {
+    e.preventDefault()
+    clearTimeout(paintModeTimeout)
+    var diffTouchX = e.touches[0].pageX - fx.startTouchX
+    var diffTouchY = e.touches[0].pageY - fx.startTouchY
+    var diffLastTouchX = e.touches[0].pageX - fx.lastTouchX
+    var diffLastTouchY = e.touches[0].pageY - fx.lastTouchY
+        
+    var signX = diffLastTouchX < 0 ? -1: 1
+    var signY = diffLastTouchY < 0 ? -1 : 1
+    // var thePow = fx.firstMove ? 1 : 2
+    var thePow = fx.firstMove ? 0 : 1
+    // thePow = 1
+    
+    var oldCursorX = fx.cursorX
+    var oldCursorY = fx.cursorY
+    
+    fx.cursorX = fx.cursorX + ensureSign(signX, Math.round(Math.pow(diffLastTouchX, thePow)*touchScaleX))
+    fx.cursorY = fx.cursorY + ensureSign(signY, Math.round(Math.pow(diffLastTouchY, thePow)*touchScaleY))
+    
+    if (mode == "paint") {
+        t2.beginPath()
+        // t2.moveTo(oldCursorX, oldCursorY)
+        // t2.lineTo(fx.cursorX, fx.cursorY)
+        
+        var x1 = Math.round(oldCursorX)
+        var x2 = Math.round(fx.cursorX)
+        var y1 = Math.round(oldCursorY)
+        var y2 = Math.round(fx.cursorY)
+        
+        t2.moveTo(x1, y1)
+        t2.lineTo(x2, y2)
+        t2.stroke()
+        
+        
+        // TODO: come back to this #remember
+        // fx.layers[fx.currentLayerIndex].shapes[fx.currentShapeIndex].points.push({
+        //     x: x2,    
+        //     y: y2,    
+        // })
+    }
+    
+    // fx.cursorX = fx.startCursorX + diffTouchX 
+    // fx.cursorY = fx.startCursorY + diffTouchY
+    
+    fx.firstMove = false
+    fx.lastTouchX = e.touches[0].pageX
+    fx.lastTouchY = e.touches[0].pageY
+    
+    paintModeTimeout = setTimeout(function () {
+        setMode("paint")    
+    }, paintTimeoutMillis)
+    render()
+}
+function onEnd(e) {
+    e.preventDefault()
+    clearTimeout(paintModeTimeout)
+    if (e.touches.length == 0) {
+        document.body.removeEventListener("touchmove", onMove)
+        document.body.removeEventListener("touchend", onEnd)
+        setMode("move")
+    }
+    
+    render()
+}
+function ensureSign(sign, v) {
+    if (sign < 0 && v > 0) return -v
+    if (sign > 0 && v < 0) return -v
+    return v
+}
+function demoLine() {
+    t2.moveTo(0, 0)   
+    t2.lineTo(500, 500)   
+    t2.stroke()
+}
+
+function redraw() {
+    c2.width = c2.width
+    
+    for (var layerIndex = 0; layerIndex < fx.layers.length; layerIndex++) {
+        var layer = fx.layers[layerIndex]
+        for (var shapeIndex = 0; shapeIndex < layer.shapes.length; shapeIndex++) {
+            var shape = layer.shapes[shapeIndex]
+            // first the circle
+            var points = shape.points
+            t2.strokeStyle = shape.brushColor
+            t2.fillStyle = shape.brushColor
+            t2.lineCap = "round"
+            t2.lineWidth = shape.brushSize
+            if (shape.points.length == 1) {
+                t2.beginPath()
+                t2.arc(points[0].x, points[0].y, shape.brushSize/2, 0, 2*Math.PI, false)
+                t2.fill()
+            } else {
+                t2.beginPath()
+                t2.moveTo(points[0].x, ps)
+                for (var i=1; i<points.length; i++) {
+                    var point = points[i]
+                }
+                t2.lineTo(x2, y2)
+                t2.stroke()
+            }   
+        }    
+    }
+}
+
+
+
+
+setBrushSize(20)
+setMode("move")
+/*
+A layer is a canvas tag
+Then there is the canvas used for cursor animation.
+And a canvas used for drawing. 
+
+
+every time you make a stroke, add a mini canvas.
+(only the size that you need)
+that will allow you to undo
+
+ios resource limits,
+maybe change layers to images!
+yea, have limited canvas contexts!
+
+2 large ones already?
+maybe change the cursor canvas to not be whole screen!!!
+just a little canvas that moves!
+*/
+</script>
+

@@ -1,0 +1,305 @@
+<!doctype html>
+<head>
+<meta name="apple-mobile-web-app-title" content="Viewer">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="black">
+</head>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+}
+.outerLabel {
+    padding-left: 30px;
+    margin-left: 20px;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    font-family: monospace;
+    font-size: 16px;
+}
+
+</style>
+<canvas
+   id=canvasEl
+   width=3000
+   height=1410
+   style="border-width: 10px;
+     border-style: solid;
+     margin-top: 10px;
+     margin-left: 20px;
+     width: 10px;
+     height: 10px;
+   ",
+></canvas>
+<pre class=outerLabel id=infoEl></pre>
+<script>
+var proxyPath = ""
+// PROXYPATH GOES HERE
+var viewCounter = 0
+var file = ""
+var search = ""
+var pullInterval = 1
+var t = canvasEl.getContext("2d")
+// t.font = "Courier monospace"
+function pullAndRender() {
+    fetch(proxyPath + "/view?viewCounter=" + viewCounter, {
+        cache: "no-cache"
+    }).then(r => {
+        viewCounter = r.headers.get("X-View-Counter") - 0
+        file = r.headers.get("X-File")
+        search = r.headers.get("X-Search")
+        console.log("viewCounter is now", viewCounter)
+        return r.json()
+    })
+    .then(v => {
+        render(v, file, search)
+        setTimeout(pullAndRender, pullInterval)   
+    }).catch(e => {
+        // alert("error viewing: " + e)
+        console.log("error viewing: " + e)
+    })
+}
+var lastY = -99999
+var lastX = -99999
+var fontWidth
+var fontHeight
+var fillStyleMap = {
+    0: "black",
+    1: "white",
+    2: "brown",
+    3: "yellow",
+    4: "orange",
+    5: "blue",
+    6: "rgba(0, 255, 255, 0.15)",
+    7: "rgba(0, 0, 0, 0.5)",
+    8: "rgba(255, 255, 255, 0.5)",
+}
+function fillStyleString(f) {
+  if (!(f in fillStyleMap)) {
+      return f
+  }
+  return fillStyleMap[f]
+} 
+function isNumeric(s) {
+    var c = s.charCodeAt(0)
+    return (c >= 48 && c <= 57)
+}
+function eX(x) {
+    return x * fontWidth
+}
+function eY(y) {
+    return y * fontHeight
+}
+function getNextNumber(str, index) {
+    var numb = ""
+    for (var i=index; i<str.length; i++) {
+        if (isNumeric(str[i])) {
+            numb += str[i]
+        } else {
+            return [numb-0, str.slice(i), numb]
+        } 
+    }
+    return [numb-0, "", numb]
+}
+
+var segmenter
+function splitGraphemes(theLine) {
+    if (window.Intl && window.Intl.Segmenter) {
+        if (!segmenter) {
+            segmenter = new Intl.Segmenter('en', {granularity: "grapheme"})
+        }
+        var a = []
+        var segments = segmenter.segment(theLine)
+        for (let {segment, index, isWordLike} of segments) {
+          a.push(segment)
+        }
+        return a
+    }
+    
+    return theLine.split("")
+    
+    // This also works, strange to me this interface?
+    // var si = segmenter.segment(theLine)[Symbol.iterator]()
+    // return [...si].map(x => x.segment)
+    // https://github.com/tc39/proposal-intl-segmenter
+}
+var cachedSplit = {
+    
+}
+cachedSplitKeys = []
+cachedSplitMaxLength = 5000
+function splitGraphemesCached(part) {
+    if (part in cachedSplit) {
+        return cachedSplit[part]
+    }
+    
+    cachedSplit[part] = splitGraphemes(part)
+    cachedSplitKeys.push(part)
+    if (cachedSplitKeys.length > cachedSplitMaxLength) {
+        delete cachedSplitKeys[cachedSplitKeys.shift()]
+    }
+    console.log(cachedSplitKeys.length)
+    return cachedSplit[part]
+}
+var seenFonts = {}
+var cmds = {
+    0: function(a) {
+        if (a.length == 1) {
+            var parts = a[0].split(" ")
+            for (var i=0; i<parts.length; i++) {
+                var part = parts[i]
+                part = splitGraphemesCached(part)
+                if (part.length > 1) {
+                    // t.fillText(part[0], part.slice(1)-0, lastY)
+                    var nextNumb = getNextNumber(part, 1)
+                    if (nextNumb[2].length == 0) {
+                        nextNumb[0] = lastX + 1    
+                    }
+                    t.fillText(part[0], eX(nextNumb[0]), eY(lastY))
+                    lastX = nextNumb[0]
+                    // if there is left over...
+                    if (nextNumb[1].length) {
+                        for (var j=0; j<nextNumb[1].length; j++) {
+                            var chr = nextNumb[1][j]
+                            t.fillText(chr, eX(lastX + 1), eY(lastY))
+                            lastX = lastX + 1
+                        }
+                    }
+                } else {
+                    t.fillText(part[0], eX(lastX + 1), eY(lastY))
+                    lastX = lastX + 1
+                }
+            }
+            return
+        }
+        // if (a.length == 2) {
+        //     t.fillText(a[0], a[1], lastY)
+        //     return
+        // }
+        t.fillText(a[0], eX(a[1]), eY(a[2]))
+        lastY = a[2]
+        lastX = a[1]
+    },
+    1: function(a) {
+        t.fillRect(a[0], a[1], a[2], a[3])
+    },
+    2: function(a) {
+        t.fillStyle = fillStyleString(a[0])
+    },
+    3: function(a) {
+        // alert(a)
+        t.font = a[0]
+        var currentFont = a[1]
+        if (seenFonts[currentFont.fontName]) {
+            return
+        }
+        if (currentFont.url) {
+            seenFonts[currentFont.fontName] = true
+            var font
+            if (currentFont.descriptors) {
+                font = new FontFace(currentFont.fontName, "url(" + currentFont.url + ")")
+            } else {
+                font = new FontFace(currentFont.fontName, "url(" + currentFont.url + ")", currentFont.descriptors)
+            }
+            font.load().then(function(loaded){
+                document.fonts.add(loaded)
+            }).catch(function(e){
+                alert(e)
+            })
+        }
+    },
+    4: function(a) {
+        t.textBaseline = a[0]
+    },
+    5: function(a) {
+        fontWidth = a[0]
+        fontHeight = a[1]
+        var maxCols = a[2]
+        var maxLines = a[3]
+        var isDark = a[4]
+        // canvasEl.width = canvasEl.width
+        canvasEl.width = fontWidth * maxCols  
+        canvasEl.height = fontHeight * maxLines  
+        t = canvasEl.getContext("2d")
+        var divideBy = 2
+        canvasEl.style.width = (canvasEl.width/divideBy) + "px" 
+        infoEl.style.width = (canvasEl.width/divideBy - 10) + "px" 
+        canvasEl.style.height = (canvasEl.height/divideBy) + "px" 
+        // if (isDark) {
+        //     canvasEl.style.backgroundColor = "black"
+        //     canvasEl.style.borderColor = "white"
+        //     infoEl.style.backgroundColor = "black"
+        //     infoEl.style.color = "white"
+        // } else {
+        //     canvasEl.style.backgroundColor = "white"
+        //     // canvasEl.style.backgroundColor = "lightgray"
+        //     canvasEl.style.borderColor = "black"
+        //     infoEl.style.backgroundColor = "white"
+        //     infoEl.style.color = "black"
+        // }
+        // document.body.style.backgroundColor = "gray"
+        if (isDark) {
+            canvasEl.style.backgroundColor = "black"
+            canvasEl.style.borderColor = "black"
+            infoEl.style.backgroundColor = "black"
+            infoEl.style.color = "white"
+            document.body.style.backgroundColor = "black"
+        } else {
+            canvasEl.style.backgroundColor = "white"
+            // canvasEl.style.backgroundColor = "lightgray"
+            canvasEl.style.borderColor = "white"
+            infoEl.style.backgroundColor = "white"
+            infoEl.style.color = "black"
+            document.body.style.backgroundColor = "white"
+        }
+    },
+    // 6 means no op
+    7: function(a) {
+        t.fillStyle = "black"  
+    },
+    8: function(a) {
+        t.fillStyle = "white"  
+    },
+    9: function(a) {
+        // whatever line number is
+        t.fillStyle = "brown"  
+    },
+    10: function() {
+        t.beginPath()
+    },
+    11: function(a) {
+        t.arc(a[0], a[1], a[2], a[3], a[4])
+    },
+    12: function() {
+        t.fill()
+    },
+}
+function render(v, file, search) {
+    infoEl.innerText = `file:   ${file}\nsearch: ${search}`
+    try {
+        for (var i=0; i<v.length; i++) {
+            var c = v[i]
+            if (typeof c === "string") {
+                c = [c]
+            } else if (typeof c === "number") {
+                c = [c]
+            }
+            // 6 is special meaning no change
+            if (c[0] === 6) {
+                // pullInterval = 1000
+                break    
+            }
+            if ((typeof c[0]) == "string") {
+                cmds[0](c)
+                continue
+            }
+            // pullInterval = 10
+            cmds[c[0]](c.slice(1))
+        }
+    } catch (error) {
+        alert(error.stack)
+    }
+}
+pullAndRender()
+// alert(navigator.userAgent)
+</script>

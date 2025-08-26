@@ -1,0 +1,48 @@
+<!doctype html>
+
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, max-scale=1">
+<meta name="apple-mobile-web-app-title" content="Editor">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<style>
+
+input {
+    font-size:30px;
+}
+textarea {
+    width: 400px;
+    height: 200px;
+}
+
+.button {
+    width: 100px;  
+    height: 100px;
+    background-color: pink;  
+}
+</style>
+
+<div id=marginEl>margin</div>
+<form onsubmit="handleSubmit(event)">
+    <input id=testEl onblur=handleBlur()>
+    <input class=dark type=submit style="opacity: 0.01; position: absolute; left: -999px;" value="here">
+</form>
+
+<div class=button onclick="handleClick(1)">click 1</div>
+<div class=button onclick="handleClick(2)">click 2</div>
+
+<textarea id=t></textarea>
+
+<script>
+function handleBlur() {
+    t.value += "\n" + "blurred"
+    marginEl.style.height = "300px"
+    
+}
+function handleSubmit(e) {
+    e.preventDefault()
+    t.value += "\n" + "submitted"
+    return false
+}
+function handleClick(id) {
+    t.value += "\nclicked" + id
+}
+</script>
