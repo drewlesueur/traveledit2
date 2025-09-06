@@ -151,8 +151,6 @@ func logAndErr(w http.ResponseWriter, message string, args ...interface{}) {
 	http.Error(w, string(b), 500)
 }
 
-
-
 // Index: foo
 // ===================================================================
 // --- foo
@@ -2061,17 +2059,16 @@ func main() {
 		return
 	}
 
-
-    if os.Getenv("DOMAIN") == "" {
-        httpServer := http.Server{
-            Addr: *serverAddress,
-            Handler:      mainMux,
-            ReadTimeout:  20 * time.Second,
-            WriteTimeout: 20 * time.Second,
-        }
-        httpServer.ListenAndServe()
-        return
-    }
+	if os.Getenv("DOMAIN") == "" {
+		httpServer := http.Server{
+			Addr:         *serverAddress,
+			Handler:      mainMux,
+			ReadTimeout:  20 * time.Second,
+			WriteTimeout: 20 * time.Second,
+		}
+		httpServer.ListenAndServe()
+		return
+	}
 
 	fmt.Println("domain:", os.Getenv("DOMAIN"))
 	redirectMux := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -2079,7 +2076,7 @@ func main() {
 		http.Redirect(w, r, "https://"+r.Host, http.StatusFound)
 	})
 	httpServer := http.Server{
-		Addr: *serverAddress,
+		Addr:         *serverAddress,
 		Handler:      redirectMux,
 		ReadTimeout:  20 * time.Second,
 		WriteTimeout: 20 * time.Second,
@@ -2091,14 +2088,13 @@ func main() {
 		Handler:      mainMux,
 	}
 
-
 	//go func() {log.Fatal(httpServer.ListenAndServe())}()
 	_ = httpServer
 
 	certDir := "/etc/letsencrypt/live/" + os.Getenv("DOMAIN")
 	fmt.Println(certDir)
 	fmt.Println(*serverAddress)
-	log.Fatal(httpsServer.ListenAndServeTLS(certDir + "/fullchain.pem", certDir + "/privkey.pem"))
+	log.Fatal(httpsServer.ListenAndServeTLS(certDir+"/fullchain.pem", certDir+"/privkey.pem"))
 	return
 
 }
