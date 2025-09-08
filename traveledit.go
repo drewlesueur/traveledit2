@@ -32,11 +32,14 @@ import "unicode/utf8"
 
 import "mime/multipart"
 import "net/textproto"
+import "github.com/drewlesueur/stucco"
 
 // import "github.com/NYTimes/gziphandler"
 import "compress/gzip"
 
 // import "github.com/gorilla/websocket"
+
+var E = stucco.E
 
 type SaveResponse struct {
 	Saved bool   `json:"saved"`
@@ -2059,6 +2062,8 @@ func main() {
 		return
 	}
 
+	fmt.Println("the domain is", os.Getenv("DOMAIN"))
+
 	if os.Getenv("DOMAIN") == "" {
 		httpServer := http.Server{
 			Addr:         *serverAddress,
@@ -2090,6 +2095,72 @@ func main() {
 
 	//go func() {log.Fatal(httpServer.ListenAndServe())}()
 	_ = httpServer
+
+	E(`
+		"AUTOCERT_DIR" getEnv .autocertDir as
+
+		"DOMAIN" getEnv .domain as
+		autocertDir "" isnt (
+			autocertDir "/" domain ++ ++
+			.autocertFile as
+			.chunks [ ] var
+			.curChunk [ ] var
+			.inMessage false var
+
+			autocertFile readFile newline split (
+				.line as
+				# line "--" startsWith ( "cool:" line ++ say ) if
+				# "line: " swap ++ say
+				inMessage (
+					line "--" startsWith (
+						curChunk line push	
+						chunks curChunk newline join push
+						.curChunk [ ] let		
+						.inMessage false let
+					) (
+						curChunk line push
+					) ifElse
+				) (
+					line "--" startsWith (
+						curChunk line push	
+						.inMessage true let
+					) (
+						line trim "" isnt (
+							"unexpected line: " line ++ say
+						) if
+					) ifElse
+
+				) ifElse
+				
+			) each
+			// chunks say
+
+			"/etc/letsencrypt/live/" domain "/privkey.pem" ++ ++
+			chunks 1 at newline ++
+			writeFile
+
+			"/etc/letsencrypt/live/" domain "/fullchain.pem" ++ ++
+			chunks 2 3 slice newline join newline ++
+			writeFile
+
+		) if
+
+		# .autocertDir var: getEnv: "AUTOCERT_DIR"
+
+		# if: autocertDir isnt: ""
+		# 	getEnv: "DOMAIN" | as: domain	
+		# 	readFile: autocertDir ++: "/" ++: domain
+		# 	split: newline
+		# 	each:
+		# 		
+		# 	end
+		# end
+
+		# if autocertDir isnt ""
+		# 	getEnv "DOMAIN" | as "domain"
+
+		# end
+	`)
 
 	certDir := "/etc/letsencrypt/live/" + os.Getenv("DOMAIN")
 	fmt.Println(certDir)

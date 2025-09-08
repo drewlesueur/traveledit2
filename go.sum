@@ -1,2 +1,8 @@
 github.com/creack/pty v1.1.24 h1:bJrF4RRfyJnbTJqzRLHzcGaZK1NeM5kTC9jGgovnR1s=
 github.com/creack/pty v1.1.24/go.mod h1:08sCNb52WyoAwi2QDyzUCTgcvVFhUzewun7wtTfvcwE=
+github.com/drewlesueur/stucco v1.0.0 h1:TlUCxGGWI89gpiHYEdZ8FABYMWVdXCRPh8mKQGdHzBs=
+github.com/drewlesueur/stucco v1.0.0/go.mod h1:A642KqNl9VUZK1C+trJoOMM2+sJsobd1FYDiToCAi6s=
+github.com/drewlesueur/stucco v1.0.1-0.20250906154007-f4b89b7fd919 h1:/s2aWRygBDTBhCcrrVarrR0Mhz3CSmuyGwUY6khQ1yE=
+github.com/drewlesueur/stucco v1.0.1-0.20250906154007-f4b89b7fd919/go.mod h1:A642KqNl9VUZK1C+trJoOMM2+sJsobd1FYDiToCAi6s=
+github.com/drewlesueur/stucco v1.0.1-0.20250908114834-a4f64bd47d7a h1:izCSmpDvQqJxLD6kuSBxJnkzNgdXIvUaVUGhcUoByWc=
+github.com/drewlesueur/stucco v1.0.1-0.20250908114834-a4f64bd47d7a/go.mod h1:A642KqNl9VUZK1C+trJoOMM2+sJsobd1FYDiToCAi6s=
