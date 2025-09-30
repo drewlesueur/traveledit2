@@ -1,213 +1,22 @@
 <!doctype html>
 <!--
+fix issue with knowing position changes
+undo and redo need to make the document "dirty"
+like when you paste and have a highlight range
+also with the undo
 
-select terms with holding down 2middle
-fix unparralel action
-paste and replace (1midleft) doesn't work for block
-
-on first load sometimes the filetype specific control doesn't load
-
-if err != nil {}
-hitting enter there should auto indent!
+don't allow rerun on a reloaded session terminal
 
 
-abstract http abstract where funcs live
-call on server or clent?
+button to increase or decrease number
+allow graphs and visualizations
 
-the blue (sliceleft sliceright) on thr bottom 
-should nav by word!
+issue with streaming chatgpt after refresh
 
-prevent rerun on terminal that you haven't manually run
-donthe reverse of duplicate/comment
+we need a one tap copy (long tap copy block)
+one tap indent, long tap indent block
 
-go imports
-tap right select to increase selection by next block
-left to do it by word?
-clearing paste buffer, have it guess what to add
-like increasing nunber, true to false etc, comma semicolon
-
-cursor in word can make it a color quickly...
-
-expand selection by continually tapping select gutter
-next feature:
-expanding and collapsing indents
-
-plop , . ; }  at end
-navigating directory on second from left file has flashes
-
-TODO: seems like long files have per issues finding header, when scrolled to bottom
-need to run on :443... proxy.
-global http proxy.
-
-
-dumb webserver that calls scripts (like apache)
-
-external index to filesystem db
-notes
-a: 1
-a 1
-
-header functions
-zoom
-
-
-
-at top show what function we are in
-basically all the indent levels.
-
-
-need quick button to indent and dedent
-flows, linked files
-easily add color
-at some point better sliced undo?
-better handling of super long lines
-the "marker" search should change
-
-inline color args? // args:blue
- 
-
-open html?
-
-syntax highlighting
-select line with one tap
-fonts on screenshare
-idea last position
-if cursor not in screen, breaks screenshare until you move cursor (becsuse moving ensures it's in screen)
-highlight recently changed lines
-you need a button for start select line
-start select char
-last char on prev line button
-slowly dragging doesn't trigger move as fasr as I'd think
-is it because I have too much code?
-touch area to del() and paste() in one go
-button to tab right and tab left
-
-voice commands
-next tab
-previous tab
-last tab
-start selection
-slots, put words in slots
-
-
-change start selection
-change end selection
-go to line
-
-where the first word is different start processing there
-
-top line
-
-select block?
-comment block?
-
-commands I want
-edit
-edit and insert newline
-move left, right, up, down
-go end of line, beginning of line
-end of file, beginning of file
-up by paragraph, down by paragraph
-? next word, prev word
-paste line
-paste inline
-duplicate line
-replace line (delete and paste)
-replace word
-copy
-cut (note I have smart cut and paste, where cut paste, cut paste will toggle etc)
-delete line
-delete word
-indent, dedent
-select word
-select line
-select in string
-select in quotes
-? select in paragraph
-space, backspace, newline
-join lines
-find down, find up
-clear search
-edit search
-toggle comment
-undo redo
-
-keep search
-
-
-b.   n
-c.   w
-
-char udlr delfwd delback select copy
-word lr delin select copy 
-line ud del select copy paste indent dedent
-block ud
-file
-
-feature        char word line blok file ()"" lngr
-----------     ---- ---- ---- ---- ---- ---- ----
-// up             x    x    x    x    x
-// down           x    x    x    x    x
-// left           x    x    x    x    x
-// right          x    x    x    x    x
-// del back       x    x    x
-// del forward    x    x    x
-// del in              x    x    x    x
-dupl (cpy,pst)      x    x    x    x
-repl (cut,pst)      x    x    x    x
-// indent                   x    x    x
-// dedent                   x    x    x
-add blank      x         x
-select         x    x    x    x    x
-copy           x    x    x    x    x
-paste          x         x
-comment    
-
-
-            c w l b f p
-            
-  < o >   s s s
-  o x o   / c d
-  { o }   b p r
-
-
-clear search
-edit search
-find down
-find up
-undo redo
-alt tab
-prev tab
-next tab
-dup tab
-up dir
-
-t su - cut line (or selection)
-t sl - dedent
-t sr - indent
-t sd - copy line
-t sd t - duplicate line (or selection)
-t su t - replace line
-t t - paste (or by line depending on selectMode)
-t r - move cursor right
-t l - move cursor left
-t u - move cursor up
-t d - move cursor down
-t R - move cursor right by word
-# t sr sr - comment/uncomment
-t sr sr - space
-t sl sl - backspace
-t sd sd - newline
-t sl sr - comment/uncomment
-t sr sl - join
-t t sl - delete to beginning
-t t sr - delete to end
-t t su - delete word
-t t d - copy word
-t t su t - replace word
-t t sd - copy word
-
-(long swipe, diag swipe, diag Touch, start swiping left)
+left slice  repurposed for copy?!
 -->
 <html>
 <head>
@@ -219,9 +28,6 @@ var isGitBash = false
 // ISGITBASH GOES HERE
 
 </script>
-<!--<meta name="viewport" content="width=device-width, initial-scale=1">
--->
-
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no, max-scale=1">
 <meta name="apple-mobile-web-app-title" content="Editor">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -237,11 +43,7 @@ document.write(`
 <!-- For now not loading in third party diff library. -->
 <!--<script src="`+proxyPath+`/tepublic/diff.js"></scr`+`ipt>-->
 <script src="`+proxyPath+`/tepublic/md52.js"></scr`+`ipt>
-<script src="`+proxyPath+`/tepublic/thumbscript4.js?v=`+Date.now()+`"></scr`+`ipt>
-<!-- For now not loading in grapheme splitter to save pageload. -->
-<!-- it means we can't use emojis, other unicode chars for now -->
-<!-- <script src="`+proxyPath+`/tepublic/grapheme-splitter.js"></scr`+`ipt>
- -->
+<!--<script src="`+proxyPath+`/tepublic/thumbscript4.js?v=`+Date.now()+`"></scr`+`ipt>-->
 `)
 </script>
 <script src="https://unpkg.com/sval@0.4.8/dist/sval.min.js"></script>
@@ -373,6 +175,30 @@ body.light .toolbar div.selected {
     justify-content: center;
     text-align: center;
 }
+
+
+
+/* 
+ For iPad
+ */
+@media only screen
+  and (min-width: 700px)
+  and (orientation: portrait) {
+  
+    .toolbar .fileButton {
+        min-width: 60px;
+        height: 46px;
+    }
+    .toolbar .icon,
+    .toolbar .square,
+    .toolbar .longButton,
+    .toolbar .middleButton {
+        width: 120px;
+        height: 54px;
+    }
+}
+
+
 
 .toolbar .slotButton {
     overflow: hidden;
@@ -561,17 +387,22 @@ They get changed later on.
     
     <div class=middleButton onclick=reloadFile(fx)>reload</div>
     <div class=middleButton onclick=goUpDirectory()>⬆️</div>
-    <div class=middleButton id="gptButton" onclick=runChatGPT('gpt-4o-mini')>4o mini</div>
-    <div class=middleButton id="gptButtonCode" onclick="runChatGPT('gpt-4o-mini', {extra: onlyCode})">4o mini code</div>
+    <div class=middleButton id="gptButton" onclick="runChatGPT('gpt-5')">gpt-5</div>
+    <div class=middleButton onclick="runChatGPT('gpt-5', {extra: onlyCode})">gpt-5 code</div>
     <div id=saveButton class=middleButton onclick=saveWrapper()>save</div>
     <div class=middleButton onclick="runScript()" id=statusBar>run script</div>
+    <div class=middleButton onclick="runChatGPT('gpt-4.1')">4.1</div>
+    <div class=middleButton onclick="runChatGPT('gpt-4.1', {extra: onlyCode})">4.1 code</div>
+    <div class=middleButton onclick=runChatGPT('o3')>o3</div>
+    <div class=middleButton onclick="runChatGPT('o3', {extra: onlyCode})">o3 code</div>
+    <div class=middleButton onclick=runChatGPT('gpt-4.1-mini')>4.1 mini</div>
+    <div class=middleButton onclick="runChatGPT('gpt-4.1-mini', {extra: onlyCode})">4.1 mini code</div>
     <div class=square onclick="window.open(location.origin+location.pathname+'/saveload?browser=1&fullpath=' + encodeURIComponent(fx.fullPath))">open browser</div>
+    <div class=middleButton onclick=openAtCursor()>open</div>
     <div class=middleButton onclick="runScript()">action2</div>
     <div class=middleButton onclick="runScript()">action3</div>
-    <div class=middleButton id="gptButton2" onclick=runChatGPT('gpt-4o')>4o</div>
-    <div class=middleButton id="gptButton2Code" onclick="runChatGPT('gpt-4o', {extra: onlyCode})">4o code</div>
-    <div class=middleButton id="gptButton3" onclick=runChatGPTNonStreaming('o1-mini')>o1-mini</div>
-    <div class=middleButton id="gptButton3Code" onclick="runChatGPTNonStreaming('o1-mini', {extra: onlyCode})">o1-mini code</div>
+    <div class=middleButton onclick="runChatGPT('o4-mini')">o4-mini</div>
+    <div class=middleButton onclick="runChatGPT('o4-mini', {extra: onlyCode})">o4-mini code</div>
 </div>
 <div class="toolbar hidden" id=terminalToolbar1 style="--display: none">
     <div class=middleButton onclick='sendTerminal("\x03"); event.preventDefault()'>^C</div>
@@ -639,112 +470,6 @@ They get changed later on.
 </div>
 <!--<div class="toolbar xhidden" id=fileRow ontouchstart=selectFileRow(event)>-->
 <!--Select file row was here-->
-<div style="display: none; background-color: black">
-    <!-- some buttons can be long press -->
-    <!-- you could snap down snap left snap up snap right -->
-    <div class=toolbar>
-        <div onclick="moveCursorLeft()"
-             onlongclick="moveCursorHome()"
-             class=icon>⬅️</div>
-        <div onclick="moveCursorRight()"
-             onlongclick="moveCursorEnd()"
-             class=icon>➡️</div>
-        <div onclick="findUp()"
-             onlongclick="clearSearch()"
-             class=icon>🔺</div>
-        <div onclick="findDown()"
-             onlongclick="editSearch()"
-             class=icon>🔻</div>
-        <div onclick="dup()"
-             onlongclick="copy()"
-             class=icon>👀</div>
-        <div onclick="goUpDirectory()"
-            onlongclick="reloadfile()"
-            class=icon>⤴️</div>
-        <div onclick="moveCursorUp()"
-            onlongclick="goToTop()" 
-            class=icon>⬆️</div>
-        <div onclick="moveCursorDown()" 
-             onlongclick="goToBottom()"
-             class=icon>⬇️</div>
-        <div onclick="navFileLeft()"
-             onlongclick="seeFiles()"
-             style="filter: hue-rotate(90deg)"
-             class=icon>◀️</div>
-        <div onclick="navFileRight()" 
-             onlongclick="altTab()" 
-             class=icon>▶️</div>
-    </div>
-    <div class=toolbar>
-        <div onclick="undo()" 
-             onlongclick="editMode()"
-             class=icon>↩️</div>
-        <div onclick="redo()" 
-             onlongclick="save()"
-             id=saveIcon
-             class=icon>↪️</div>
-        <div onclick="del()" 
-             onlongclick="deleteWord()"
-             class=icon>✂️</div>
-        <div onclick="paste()" 
-             onlongclick="pasteInline"
-             class=icon>🪧</div>
-        <div onclick="cmd()"
-             onlongclick="runScript()"
-             class=icon>🐚</div>
-        <div onclick="xterm()" 
-             onlongclick="openEditorCommandText()"
-             class=icon>🐢</div>
-        <div onclick="backspace()" 
-             onlongclick="clearLine()"
-             class=icon>🅱️</div>
-        <div onclick="closeFile()" 
-             onlongclick="closeDupFiles()" 
-             class=icon>❌</div>
-        <div onclick="newline()" 
-             onlongclick="joinLines()" 
-             class=icon>🏁</div>
-        <div onclick="selectWord()" 
-             onlongclick="selectLine()"
-             class=icon>🎀</div>
-    </div>
-    <div class=toolbar>
-        <div onclick="moveFileLeft()" 
-             onlongclick="moveFileAllTheWayLeft()"
-             class=icon>👈</div>
-        <div onclick="moveFileRight()" 
-             onlongclick="openFile()"
-             class=icon>👉</div>
-        <div onclick="dedent()" 
-             class=icon>🫲</div>
-        <div onclick="indent()" 
-             class=icon>🫱</div>
-        <div onclick="goBack()" 
-             class=icon>🚗</div>
-        <div onclick="goForward()" 
-             class=icon
-             style="transform: scale(-1, 1)";>🚗</div>
-        <div onclick="newScratch()" 
-             class=icon>📝</div>
-        <div onclick="diffFiles()" class=icon>🍉</div>
-        <div onclick="showDiff()" class=icon>🎄</div>
-        <div onclick="visit()" class=icon>🌎</div>
-    </div>
-    <div class=toolbar>
-        <div onclick="doRefresh()" class=icon>🔄</div>
-        <div onclick="googleIt()" class=icon>🍓</div>
-        <div onclick="download()" class=icon>📲</div>
-        <div onclick="iframeBrowser()" class=icon>🖼️</div>
-        <div onclick="openBrowser()" class=icon>🌍</div>
-        <div onclick="copyPath()" class=icon>👮‍♀️</div>
-        <div onclick="osCopy()" class=icon>🚓</div>
-        <div onclick="osPaste()" class=icon>🍝</div>
-        <!--
-        <div onclick="seeTabs()" class=icon>🧿</div>
-        <div onclick="toggleDarkMode()" class=icon>💡</div>
-        -->
-    </div>
-</div>
 <div class=toolbar>
 </div>
 <div class=toolbar>
@@ -772,48 +497,61 @@ They get changed later on.
 
 <div class=toolbar>
     <div class=longButton onclick="selectFont('Menlo')">Menlo</div>
-    <div class=longButton onclick="selectFont('IosevkaExtended')">IkaE (slow)</div>
-    <div class=longButton onclick="selectFont('IosevkaTermExtended')">IkaE2 (slow)</div>
+    <div class=longButton onclick="selectFont('GoogleSansCode')">Google</div>
+    <div class=longButton onclick="selectFont('RedditMono')">Reddit Mono</div>
+    <div class=longButton onclick="selectFont('InputMono')">Input Mono</div>
+    <div class=longButton onclick="selectFont('SFMono')">SF Mono</div>
+    <div class=longButton onclick="selectFont('CommitMono')">Commit Mono</div>
+    <div class=longButton onclick="selectFont('cousine')">cousine</div>
+    <div class=longButton onclick="selectFont('robotomono')">robotomono</div>
+    <div class=longButton onclick="selectFont('fragmentmono')">fragmentmono</div>
+    <div class=longButton onclick="selectFont('ibmplexmono')">ibmplexmono</div>
+    <div class=longButton onclick="selectFont('GeistMono')">Geist Mono</div>
+    <div class=longButton onclick="selectFont('chivomonolight')">chivomonolight</div>
+    <div class=longButton onclick="selectFont('notosansmono')">notosansmono</div>
+    <div class=longButton onclick="selectFont('firacode')">firacode</div>
+    <div class=longButton onclick="selectFont('firamono')">firamono</div>
+    <div class=longButton onclick="selectFont('sourcecodepro')">sourcecodepro</div>
+    <div class=longButton onclick="selectFont('redhatmono')">redhatmono</div>
+    <div class=longButton onclick="selectFont('ptmono')">ptmono</div>
+    <div class=longButton onclick="selectFont('anonymouspro')">anonymouspro</div>
+    <div class=longButton onclick="selectFont('victormono')">victormono</div>
+    <div class=longButton onclick="selectFont('AtkinsonMono')">Atkinson Mono</div>
+    <div class=longButton onclick="selectFont('ZedMono')">Zed Mono</div>
+    
+    
+    
     <div class=longButton onclick="selectFont('Martha')">Martha</div>
     <div class=longButton onclick="selectFont('BerkeleyMono')">Berkeley Mono</div>
     <div class=longButton onclick="selectFont('chivomono')">chivomono</div>
-    <div class=longButton onclick="selectFont('chivomonolight')">chivomonolight</div>
     <div class=longButton onclick="selectFont('azeretmono')">azeretmono</div>
     <div class=longButton onclick="selectFont('martianmono')">martianmono</div>
     <div class=longButton onclick="selectFont('spacemono')">spacemono</div>
     <div class=longButton onclick="selectFont('jetbrainsmono')">jetbrainsmono</div>
-    <div class=longButton onclick="selectFont('splinesansmono')">splinesansmono</div>
-    
-    <div class=longButton onclick="selectFont('firacode')">firacode</div>
-    <div class=longButton onclick="selectFont('firamono')">firamono</div>
-    <div class=longButton onclick="selectFont('fragmentmono')">fragmentmono</div>
-    <div class=longButton onclick="selectFont('ibmplexmono')">ibmplexmono</div>
-    
-    
+    <div class=longButton onclick="selectFont('JetBrainsMono')">JetBrainsMono</div>
     <div class=longButton onclick="selectFont('Neon')">Neon</div>
+    <div class=longButton onclick="selectFont('splinesansmono')">splinesansmono</div>
+    <div class=longButton onclick="selectFont('NanumGothicCoding')">Nanum GC</div>
+    
+    
+    
     <div class=longButton onclick="selectFont('Argon')">Argon</div>
     <div class=longButton onclick="selectFont('Krypton')">Krypton</div>
     <div class=longButton onclick="selectFont('Radon')">Radon</div>
     <div class=longButton onclick="selectFont('Xenon')">Xenon</div>
     <div class=longButton onclick="selectFont('Courier')">Courier</div>
-    <div class=longButton onclick="selectFont('SFMono')">SF Mono</div>
     <div class=longButton onclick="selectFont('Dossier')">Dossier</div>
-    <div class=longButton onclick="selectFont('JetBrainsMono')">JetBrainsMono</div>
-    <div class=longButton onclick="selectFont('InputMono')">Input Mono</div>
     <div class=longButton onclick="selectFont('InputMonoX')">Input Mono X</div>
     <div class=longButton onclick="selectFont('VictorMono')">Victor Mono</div>
     <div class=longButton onclick="selectFont('SaxMono')">Sax Mono</div>
     <div class=longButton onclick="selectFont('VictorMonoMedium')">Victor Mono M</div>
     <div class=longButton onclick="selectFont('VictorMonoSemiBold')">Victor Semi Bold</div>
-    <div class=longButton onclick="selectFont('AnonymousPro')">Anonymous Pro</div>
-    <div class=longButton onclick="selectFont('AnonymousProBold')">Anonymous Pro Bold</div>
     <div class=longButton onclick="selectFont('SourceCodePro')">Source Code Pro</div>
     <div class=longButton onclick="selectFont('InputMonoLucida')">Input Mono L</div>
     <div class=longButton onclick="selectFont('IosevkaLucida')">Iosevka L</div>
     <div class=longButton onclick="selectFont('IosevkaLucidaMedium')">Iosevka L Medium</div>
     <div class=longButton onclick="selectFont('IosevkaLucidaSemiBold')">Iosevka L SemiBold</div>
     <div class=longButton onclick="selectFont('IosevkaLucidaThin')">Iosevka L Thin</div>
-    <div class=longButton onclick="selectFont('RobotoMono')">Roboto Mono</div>
     <div class=longButton onclick="selectFont('CourierThin')">Courier Thin</div>
     <div class=longButton onclick="selectFont('SFMonoThin')">SF Thin</div>
     <div class=longButton onclick="selectFont('IosevkaThin')">Iosevka Thin</div>
@@ -823,33 +561,26 @@ They get changed later on.
     <div class=longButton onclick="selectFont('Inconsolata')">Inconsolata</div>
     <div class=longButton onclick="selectFont('InconsolataThin')">Inconsolata Thin</div>
     <div class=longButton onclick="selectFont('Courier New')">Courier New</div>
-    <div class=longButton onclick="selectFont('NanumGothicCoding')">Nanum GC</div>
     <div class=longButton onclick="selectFont('GillSans')">Gill Sans</div>
     <div class=longButton onclick="selectFont('AmericanTypewriter')">American T</div>
 
 
-    <div class=longButton onclick="selectFont('anonymouspro')">anonymouspro</div>
     <div class=longButton onclick="selectFont('b612mono')">b612mono</div>
     <div class=longButton onclick="selectFont('courierprime')">courierprime</div>
     <div class=longButton onclick="selectFont('sono')">sono</div>
     <div class=longButton onclick="selectFont('sometypemono')">sometypemono</div>
-    <div class=longButton onclick="selectFont('sourcecodepro')">sourcecodepro</div>
-    <div class=longButton onclick="selectFont('cousine')">cousine</div>
     <div class=longButton onclick="selectFont('cutivemono')">cutivemono</div>
     <div class=longButton onclick="selectFont('dmmono')">dmmono</div>
     <div class=longButton onclick="selectFont('inconsolata')">inconsolata</div>
     <div class=longButton onclick="selectFont('mplus1code')">mplus1code</div>
     <div class=longButton onclick="selectFont('nanumgothiccoding')">nanumgothiccoding</div>
-    <div class=longButton onclick="selectFont('notosansmono')">notosansmono</div>
     <div class=longButton onclick="selectFont('overpassmono')">overpassmono</div>
     <div class=longButton onclick="selectFont('oxygenmono')">oxygenmono</div>
-    <div class=longButton onclick="selectFont('ptmono')">ptmono</div>
-    <div class=longButton onclick="selectFont('redhatmono')">redhatmono</div>
-    <div class=longButton onclick="selectFont('robotomono')">robotomono</div>
     <div class=longButton onclick="selectFont('sharetechmono')">sharetechmono</div>
     <div class=longButton onclick="selectFont('ubuntumono')">ubuntumono</div>
-    <div class=longButton onclick="selectFont('victormono')">victormono</div>
     <div class=longButton onclick="selectFont('wellfleet')">wellfleet</div>
+    <div class=longButton onclick="selectFont('IosevkaExtended')">IkaE (slow)</div>
+    <div class=longButton onclick="selectFont('ZedMono')">Zed Mono</div>
 </div>
 
 
@@ -883,7 +614,7 @@ They get changed later on.
     <div class=square onclick=scriptLines()>script lines</div>
 </div>
 <div class=toolbar>
-    <div class=square onclick=debugView()>debug view</div>
+    <div class=square onclick=toggleDebugView()>debug view</div>
     <div class=square onclick=doEval()>eval</div>
     <div class=square onclick="reloadAll()">reload all</div>
     <div class=square onclick="comment('--')">--</div>
@@ -1008,6 +739,10 @@ They get changed later on.
     <input onchange="caseSensitiveSearch = caseSensitiveSearchCheckbox.checked" type=checkbox name=caseSensitiveSearchCheckbox id=caseSensitiveSearchCheckbox />
     case sensitive search
 </label>
+<label for=showGoErrorsCheckbox>
+    <input onchange="showGoErrors = showGoErrorsCheckbox.checked" type=checkbox name=showGoErrorsCheckbox id=showGoErrorsCheckbox />
+    show Go errors
+</label>
 <br>
 <label for=serverViewCheckbox>
     <input onchange="serverViewFeature = serverViewCheckbox.checked" type=checkbox name=serverViewCheckbox id=serverViewCheckbox />
@@ -1079,6 +814,16 @@ slot2Button.innerText = localStorage.getItem("slot2") || "slot 2"
 slot3Input.value = localStorage.getItem("slot3")
 slot3Button.innerText = localStorage.getItem("slot3") || "slot 3"
 var t = c.getContext("2d")
+// if ('filter' in t) {
+//   alert("filter")
+//   t.filter = "blur(3px)";
+// } else {
+//   alert("shadow")
+//   t.shadowColor = "white";
+//   t.shadowBlur = 15;
+//   t.shadowOffsetX = 0;
+//   t.shadowOffsetY = 0;
+// }
 
 var preventRender = true
 // var saveDiffs = false
@@ -1124,55 +869,75 @@ var onlyCode = '\nOnly give me code, no explanation, no markdown wrapper. Just t
 // sohne mono
 var fonts = {
     "BerkeleyMono": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 17.5,
         fontSize: 30,
         fontName: "BerkeleyMono",
         // fontOffsetYPre: 3,
         url: proxyPath + "/tepublic/BerkeleyMonoTrial-Regular.otf"
     },
+    "ZedMono": {
+        fontHeightPre: 38,
+        fontWidthPre: 18,
+        fontSize: 30,
+        fontName: "ZedMono",
+        // fontOffsetYPre: 3,
+        url: proxyPath + "/tepublic/zed-mono-regular.ttf"
+    },
+    "CommitMono": {
+        fontHeightPre: 38,
+        fontWidthPre: 18,
+        fontSize: 30,
+        fontName: "CommitMono",
+        // fontOffsetYPre: 3,
+        url: proxyPath + "/tepublic/CommitMono-400-Regular.otf"
+    },
     // "Martha": {
-    //     fontHeightPre: 36,
+    //     fontHeightPre: 38,
     //     fontWidthPre: 18,
     //     fontSize: 30,
     //     fontName: "Martha",
     //     fontOffsetYPre: 3,
     //     url: proxyPath + "/tepublic/martha.otf"
     // },
-    "IosevkaTermExtended": {
-        // this font is crazy slow!
-        // but my other ones aren't?
-        fontHeightPre: 36,
-        fontWidthPre: 18,
-        fontSize: 30,
-        fontName: "IosevkaTermExtended",
-        // url: "https://iosevka-webfonts.github.io/iosevka-term/woff2/iosevka-term-extended.woff2"
-        url: "https://iosevka-webfonts.github.io/iosevka-term/woff2/iosevka-term-regular.woff2"
-    },
     "IosevkaExtended": {
         // this font is crazy slow!
         // but my other ones aren't?
-        // even downloading raw ttf is slow!
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "IosevkaExtended",
-        // descriptors: {stretch: "expanded"},
-        // url: "https://iosevka-webfonts.github.io/iosevka/woff2/iosevka-extended.woff2"
-        // url: "https://iosevka-webfonts.github.io/iosevka/ttf/iosevka-extended.ttf"
-        url: proxyPath + "/tepublic/iosevka/iosevka-extended.ttf"
+        // url: "https://iosevka-webfonts.github.io/iosevka-term/woff2/iosevka-term-extended.woff2"
+        // url: "https://iosevka-webfonts.github.io/iosevka/WOFF2/Iosevka-Extended.woff2"
+        // url: "https://iosevka-webfonts.github.io/iosevka/TTF/Iosevka-Extended.ttf"
+        // url: "https://iosevka-webfonts.github.io/iosevka-fixed/ttf/iosevka-fixed-extended.ttf"
+        url: "https://iosevka-webfonts.github.io/iosevka-fixed/woff2/iosevka-fixed-extended.woff2"
     },
+    // "IosevkaExtended": {
+    //     // this font is crazy slow!
+    //     // but my other ones aren't?
+    //     // even downloading raw ttf is slow!
+    //     fontHeightPre: 38,
+    //     fontWidthPre: 18,
+    //     fontSize: 30,
+    //     fontName: "IosevkaExtended",
+    //     // descriptors: {stretch: "expanded"},
+    //     // url: "https://iosevka-webfonts.github.io/iosevka/woff2/iosevka-extended.woff2"
+    //     // url: "https://iosevka-webfonts.github.io/iosevka/ttf/iosevka-extended.ttf"
+    //     url: proxyPath + "/tepublic/iosevka/iosevka-extended.ttf"
+    // },
     "Neon": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontOffsetYPre: 3,
         fontSize: 30,
         fontName: "Neon",
         // url: proxyPath + "/tepublic/monaspace/monaspace-v1.000/fonts/webfonts/MonaspaceNeon-Regular.woff"
-        url: proxyPath + "/tepublic/monaspace/monaspace-v1.000/fonts/otf/MonaspaceNeon-Regular.otf"
+        // url: proxyPath + "/tepublic/monaspace/monaspace-v1.000/fonts/otf/MonaspaceNeon-Regular.otf"
+        url: "https://github.com/githubnext/monaspace/raw/refs/heads/main/fonts/webfonts/MonaspaceNeon-Regular.woff2"
     },
     "Argon": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontOffsetYPre: 3,
         fontSize: 30,
@@ -1181,7 +946,7 @@ var fonts = {
         url: proxyPath + "/tepublic/monaspace/monaspace-v1.000/fonts/otf/MonaspaceArgon-Regular.otf"
     },
     "Krypton": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontOffsetYPre: 3,
         fontSize: 30,
@@ -1190,7 +955,7 @@ var fonts = {
         url: proxyPath + "/tepublic/monaspace/monaspace-v1.000/fonts/otf/MonaspaceKrypton-Regular.otf"
     },
     "Radon": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontOffsetYPre: 3,
         fontSize: 30,
@@ -1199,7 +964,7 @@ var fonts = {
         url: proxyPath + "/tepublic/monaspace/monaspace-v1.000/fonts/otf/MonaspaceRadon-Regular.otf"
     },
     "Xenon": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontOffsetYPre: 3,
         fontSize: 30,
@@ -1208,19 +973,19 @@ var fonts = {
         url: proxyPath + "/tepublic/monaspace/monaspace-v1.000/fonts/otf/MonaspaceXenon-Regular.otf"
     },
     // "Monospace": {
-    //     fontHeightPre: 36,
+    //     fontHeightPre: 38,
     //     fontWidthPre: 18,
     //     fontSize: 30,
     //     fontName: "monospace",
     // },
     // "Droid Sans Mono": {
-    //     fontHeightPre: 36,
+    //     fontHeightPre: 38,
     //     fontWidthPre: 18,
     //     fontSize: 30,
     //     fontName: "Droid Sans Mono",
     // },
     // "InputMono": {
-    //     // fontHeightPre: 36,
+    //     // fontHeightPre: 38,
     //     fontHeightPre: 40,
     //     fontWidthPre: 18.5,
     //     fontSize: 30,
@@ -1228,7 +993,7 @@ var fonts = {
     //     url: proxyPath + "/tepublic/input_mono/input_mono.ttf"
     // },
     "SaxMono": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "SaxMono",
@@ -1242,11 +1007,18 @@ var fonts = {
         url: "https://tosche.net/assets/fonts/Dossier-Regular.woff2"
     },
     "JetBrainsMono": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "JetBrainsMono",
         url: "https://fonts.gstatic.com/s/jetbrainsmono/v13/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxTOlOVk6WThg.woff2"
+    },
+    "GoogleSansCode": {
+        fontHeightPre: 38,
+        fontWidthPre: 18,
+        fontSize: 30,
+        fontName: "GoogleSansCode",
+        url: "https://fonts.gstatic.com/s/googlesanscode/v11/pxiSyogzv91QhV44Z_GQBHsGf5PuckJMXr41HfVaiXFhgjF58LS-h3BytSU.woff2"
     },
     "InputMono": {
         fontHeightPre: 38,
@@ -1256,53 +1028,52 @@ var fonts = {
         url: proxyPath + "/tepublic/input_mono/input_mono.ttf"
     },
     "InputMonoX": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "InputMonoX",
         url: proxyPath + "/tepublic/input_mono/input_mono.ttf"
     },
     // "IosevkaExtended": {
-    //     fontHeightPre: 36,
+    //     fontHeightPre: 38,
     //     fontWidthPre: 18,
     //     fontSize: 30,
     //     fontName: "IosevkaExtended",
     //     url: proxyPath + "/tepublic/iosevka-fixed-extended.ttf"
     // },
     "Courier": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         // fontWidthPre: 18,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "Courier",
     },
     "CourierThin": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "Courier",
     },
     "Courier New": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "Courier New",
     },
     "Menlo": {
-        // fontHeightPre: 36,
         fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "Menlo",
     },
     "AmericanTypewriter": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "AmericanTypewriter",
     },
     "GillSans": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "GillSans",
@@ -1310,7 +1081,7 @@ var fonts = {
     "SFMono": {
         // I think this actually only works because we default to ui-monospace
         // SFMono seems to not be known
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "ui-monospace",
@@ -1319,77 +1090,78 @@ var fonts = {
     "SFMonoThin": {
         // I think this actually only works because we default to ui-monospace
         // SFMono seems to not be known
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 15,
         fontSize: 30,
         fontName: "SFMono",
     },
     "SourceCodePro": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "SourceCodePro",
         // url: "https://fonts.gstatic.com/s/sourcecodepro/v14/HI_QiYsKILxRpg3hIP6sJ7fM7PqlONvUlMIFxGC8.woff2"
         url: "https://fonts.gstatic.com/s/sourcecodepro/v14/HI_SiYsKILxRpg3hIP6sJ7fM7PqlPevWnsUnxg.woff2"
     },
+    "RedditMono": {
+        fontHeightPre: 38,
+        fontWidthPre: 18,
+        fontSize: 30,
+        fontName: "RedditMono",
+        url: "https://fonts.gstatic.com/s/redditmono/v3/oPWL_kRmmu4oQ88oo13o4-rLRjtdRHSW.woff2"
+    },
+    "GeistMono": {
+        fontHeightPre: 38,
+        fontWidthPre: 18,
+        fontSize: 30,
+        fontName: "GeistMono",
+        url: "https://fonts.gstatic.com/s/geistmono/v1/or3nQ6H-1_WfwkMZI_qYFrcdmhHkjko.woff2"
+    },
     "InputMonoLucida": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "InputMonoLucida",
         url: proxyPath + "/tepublic/input_mono/input_mono_lucida.ttf"
     },
-    "AnonymousPro": {
-        fontHeightPre: 36,
-        fontWidthPre: 17,
-        fontSize: 30,
-        fontName: "AnonymousPro",
-        url: "https://fonts.gstatic.com/s/anonymouspro/v14/rP2Bp2a15UIB7Un-bOeISG3pHls29QP-4Ks.woff2"
-    },
-    "AnonymousProBold": {
-        fontHeightPre: 36,
-        fontWidthPre: 17,
-        fontSize: 30,
-        fontName: "AnonymousProBold",
-        url: "https://fonts.gstatic.com/s/anonymouspro/v14/rP2cp2a15UIB7Un-bOeISG3pFuAT4C7c7YGx0Ks.woff2"
-    },
     "VictorMono": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "VictorMono",
         url: proxyPath + "/tepublic/victor_mono/TTF/VictorMono-Regular.ttf"
     },
     "VictorMonoMedium": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "VictorMonoMedium",
         url: proxyPath + "/tepublic/victor_mono/TTF/VictorMono-Medium.ttf"
     },
     "VictorMonoSemiBold": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 18,
         fontSize: 30,
         fontName: "VictorMonoSemiBold",
         url: proxyPath + "/tepublic/victor_mono/TTF/VictorMono-SemiBold.ttf"
     },
-    "RobotoMono": {
-        fontHeightPre: 36,
-        fontWidthPre: 18,
-        fontSize: 30,
-        fontName: "RobotoMono",
-        url: "https://fonts.gstatic.com/s/robotomono/v13/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vq_ROW4AJ68SA.woff2"
-    },
+   "robotomono": {
+      "fontHeightPre": 38,
+      "fontWidthPre": 18,
+      // "fontOffsetYPre": 3,
+      "fontSize": 30,
+      "fontName": "robotomono",
+      "url": "https://fonts.gstatic.com/s/robotomono/v23/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vqPQw.ttf"
+   },
     "NanumGothicCoding": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "NanumGothicCoding",
         url: "https://fonts.gstatic.com/s/nanumgothiccoding/v14/8QIVdjzHisX_8vv59_xMxtPFW4IXROwsy6ExUM1WtMRe4NStuSM4eXtk7e0M06IfTaI.119.woff2"
     },
     "IosevkaLucida": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "IosevkaLucida",
@@ -1399,28 +1171,28 @@ var fonts = {
         url: proxyPath + "/tepublic/iosevka_lucida/iosevka-fixed-ss13-regular.ttf"
     },
     "IosevkaLucidaMedium": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "IosevkaLucidaMedium",
         url: proxyPath + "/tepublic/iosevka_lucida/iosevka-fixed-ss13-medium.ttf"
     },
     "IosevkaLucidaSemiBold": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "IosevkaLucidaSemiBold",
         url: proxyPath + "/tepublic/iosevka_lucida/iosevka-fixed-ss13-semibold.ttf"
     },
     "IosevkaLucidaThin": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "IosevkaLucidaThin",
         url: proxyPath + "/tepublic/iosevka_lucida/iosevka-fixed-ss13-thin.ttf"
     },
     "IosevkaThin": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         // fontWidthPre: 13.5,
         fontWidthPre: 14,
         fontSize: 30,
@@ -1428,14 +1200,14 @@ var fonts = {
         url: "http://192.168.0.21:8000/tepublic/iosevka_lucida/iosevka-fixed-ss13-regular.ttf"
     },
     "Iosevka": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "Iosevka",
         url: "http://tel.drewles.com:8000/tepublic/iosevka/iosevka-fixed-regular.ttf"
     },
     "IosevkaSlab": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "IosevkaSlab",
@@ -1443,7 +1215,7 @@ var fonts = {
     },
 
     "Inconsolata": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "Inconsolata",
@@ -1451,7 +1223,7 @@ var fonts = {
     },
     // https://usefulangle.com/post/74/javascript-dynamic-font-loading
     "InconsolataThin": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "InconsolataThin",
@@ -1463,14 +1235,14 @@ var fonts = {
         url: "https://fonts.gstatic.com/s/inconsolata/v21/QlddNThLqRwH-OJ1UHjlKENVzlm-WkL3GZQmAwPyya15IDhunA.woff2"
     },
     "XanhMono": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "XanhMono",
         url: "https://fonts.gstatic.com/s/xanhmono/v4/R70YjykVmvKCep-vWhSonwqRfTHxTw.woff2"
     },
     "Fake": {
-        fontHeightPre: 36,
+        fontHeightPre: 38,
         fontWidthPre: 16,
         fontSize: 30,
         fontName: "IosevkaLucida",
@@ -1481,7 +1253,7 @@ var fonts = {
 
 var extraFonts = {
    "anonymouspro": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1489,7 +1261,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/anonymouspro/v21/rP2Bp2a15UIB7Un-bOeISG3pLlw.ttf"
    },
    "azeretmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 20,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1497,7 +1269,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/azeretmono/v17/3XF5ErsiyJsY9O_Gepph-FvtTQgMQUdNekSfnPVh0g.ttf"
    },
    "b612mono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1505,7 +1277,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/b612mono/v14/kmK_Zq85QVWbN1eW6lJl1w.ttf"
    },
    "chivomono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       // "fontHeightPre": 34,
       // "fontWidthPre": 17,
       "fontWidthPre": 18,
@@ -1518,14 +1290,14 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/chivomono/v9/mFThWbgRxKvF_Z5eQMO9qRMrJJrnKNtC3D7hr6fV.ttf"
    },
    "chivomonolight": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       "fontSize": 30,
       "fontName": "chivomonolight",
       "url": "https://fonts.gstatic.com/s/chivomono/v9/mFThWbgRxKvF_Z5eQMO9qRMrJJrnKNtC3D6_r5fSIJlp0Gl5.woff2"
    },
    "courierprime": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1533,7 +1305,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/courierprime/v9/u-450q2lgwslOqpF_6gQ8kELWwY.ttf"
    },
    "cousine": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1541,7 +1313,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/cousine/v27/d6lIkaiiRdih4SpPzSM.ttf"
    },
    "cutivemono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1549,7 +1321,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/cutivemono/v20/m8JWjfRfY7WVjVi2E-K9H5RF.ttf"
    },
    "dmmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1557,7 +1329,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/dmmono/v14/aFTU7PB1QTsUX8KYhh0.ttf"
    },
    "firacode": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1565,7 +1337,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/firacode/v22/uU9eCBsR6Z2vfE9aq3bL0fxyUs4tcw4W_D1sFVc.ttf"
    },
    "firamono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1573,7 +1345,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/firamono/v14/N0bX2SlFPv1weGeLZDtQIQ.ttf"
    },
    "fragmentmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1581,7 +1353,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/fragmentmono/v4/4iCr6K5wfMRRjxp0DA6-2CLnN4Q.ttf"
    },
    "ibmplexmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1589,7 +1361,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/ibmplexmono/v19/-F63fjptAgt5VM-kVkqdyU8n5ig.ttf"
    },
    "inconsolata": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1597,7 +1369,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/inconsolata/v32/QldgNThLqRwH-OJ1UHjlKENVzkWGVkL3GZQmAwLYxYWI2qfdm7Lpp4U8aRo.ttf"
    },
    "jetbrainsmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1605,7 +1377,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/jetbrainsmono/v18/tDbY2o-flEEny0FZhsfKu5WU4zr3E_BX0PnT8RD8yKxjPQ.ttf"
    },
    "mplus1code": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1613,7 +1385,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/mplus1code/v12/ypvMbXOOx2xFpzmYJS3N2_J2hBN6RZ5oIp8m_7iN0HHp.ttf"
    },
    "martianmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1621,7 +1393,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/martianmono/v3/2V08KIcADoYhV6w87xrTKjs4CYElh_VS9YA4TlTnQzaVMIE6j15dYY1qu86W.ttf"
    },
    "nanumgothiccoding": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1629,7 +1401,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/nanumgothiccoding/v21/8QIVdjzHisX_8vv59_xMxtPFW4IXROwsy6Q.ttf"
    },
    "notosansmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1637,7 +1409,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/notosansmono/v30/BngrUXNETWXI6LwhGYvaxZikqZqK6fBq6kPvUce2oAZcdthSBUsYck4-_FNJ49o.ttf"
    },
    "overpassmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1645,7 +1417,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/overpassmono/v16/_Xm5-H86tzKDdAPa-KPQZ-AC_COcRycquHlL6EXUokzz.ttf"
    },
    "oxygenmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1653,7 +1425,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/oxygenmono/v14/h0GsssGg9FxgDgCjLeAd7ijf.ttf"
    },
    "ptmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1661,23 +1433,15 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/ptmono/v13/9oRONYoBnWILk-9ArCg.ttf"
    },
    "redhatmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
       "fontName": "redhatmono",
       "url": "https://fonts.gstatic.com/s/redhatmono/v11/jVyY7nDnA2uf2zVvFAhhzEs-VMSjJpBTfgjwQV3I-7E.ttf"
    },
-   "robotomono": {
-      "fontHeightPre": 36,
-      "fontWidthPre": 18,
-      // "fontOffsetYPre": 3,
-      "fontSize": 30,
-      "fontName": "robotomono",
-      "url": "https://fonts.gstatic.com/s/robotomono/v23/L0xuDF4xlVMF-BfR8bXMIhJHg45mwgGEFl0_3vqPQw.ttf"
-   },
    "sharetechmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1685,7 +1449,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/sharetechmono/v15/J7aHnp1uDWRBEqV98dVQztYldFc7pA.ttf"
    },
    "sometypemono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1693,7 +1457,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/sometypemono/v1/70lGu745KGk_R3uxyq0WrROhAJiJsJ_eTWllpTAMGE9a.ttf"
    },
    "sono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1701,7 +1465,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/sono/v6/aFT97PNiY3U2Cqf_aYEN64CYaK18YWJEsV6u-QLiOsxVtkWdEg.ttf"
    },
    "sourcecodepro": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1709,7 +1473,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/sourcecodepro/v23/HI_diYsKILxRpg3hIP6sJ7fM7PqPMcMnZFqUwX28DMyQhM4.ttf"
    },
    "spacemono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1717,7 +1481,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/spacemono/v13/i7dPIFZifjKcF5UAWdDRUEY.ttf"
    },
    "splinesansmono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1725,7 +1489,7 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/splinesansmono/v10/R70MjzAei_CDNLfgZxrW6wrZOF2WdZ6xabUGSVtNuGBiMrtV.ttf"
    },
    "ubuntumono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
@@ -1733,21 +1497,28 @@ var extraFonts = {
       "url": "https://fonts.gstatic.com/s/ubuntumono/v17/KFOjCneDtsqEr0keqCMhbBc9.ttf"
    },
    "victormono": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
-      // "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
       "fontName": "victormono",
-      "url": "https://fonts.gstatic.com/s/victormono/v3/Yq6H-LGQWyfv-LGy7lEO09xRn-T81AVB_tCyO87NhA.ttf"
+      "url": "https://fonts.gstatic.com/s/victormono/v3/Yq6Q-LGQWyfv-LGy7lEO0_ZdtxUGS7ZG.woff2"
    },
    "wellfleet": {
-      "fontHeightPre": 36,
+      "fontHeightPre": 38,
       "fontWidthPre": 18,
       // "fontOffsetYPre": 3,
       "fontSize": 30,
       "fontName": "wellfleet",
       "url": "https://fonts.gstatic.com/s/wellfleet/v22/nuF7D_LfQJb3VYgX6eyT4w.ttf"
+   },
+   "AtkinsonMono": {
+      "fontHeightPre": 38,
+      "fontWidthPre": 18,
+      // "fontOffsetYPre": 3,
+      "fontSize": 30,
+      "fontName": "AtkinsonMono",
+      "url": "https://fonts.gstatic.com/s/atkinsonhyperlegiblemono/v4/tss4AoFBci4C4gvhPXrt3wjT1MqSzhA4t7IIcncBiwKthFyDHi0j.woff2"
    }
 }
 Object.assign(fonts, extraFonts)
@@ -1771,6 +1542,8 @@ var fauxMono = false
 var fraktur = false
 var syntaxHighlight = false
 var caseSensitiveSearch = false
+// not wired up yet 
+var showGoErrors = false
 
 var lastFile = fx
 // not using indexes so we can move files around without worrying about the indexes
@@ -1873,6 +1646,20 @@ function doSizing() {
         navTouchSize = 60
     }
     
+    // iPhone 16 plus
+    if (screen.width == 430 && screen.height == 932) {
+        device = "iphone16plus"
+        var oneRow = 36*3
+        canvasHeightFull=2200
+        canvasHeightKeyboard=1365
+        navTouchSize = 35
+        if (innerWidth > innerHeight) {
+            canvasHeightFull = 900
+            canvasHeightKeyboard = 300
+            navTouchSize = 100
+        }
+    }
+    
     if (screen.width == 768 && screen.height == 1024) {
         device = "someipad"
         var oneRow = 36*3
@@ -1909,7 +1696,7 @@ function doSizing() {
     // This condition for the 2021 iPad mini
     if (screen.width == 744 && screen.height == 1133) {
         device = "ipad6"
-        canvasHeightFull = 2750 + (36*3*1)
+        canvasHeightFull = 2720 
         canvasHeightKeyboard = 2200 
         navTouchSize = 60
         // alert(innerWidth + ", " + innerHeight)
@@ -2571,9 +2358,13 @@ function setFontVars() {
     // after experimentation, there seems to be a bug in ios 15 where if we use the ui-monospace font
     // which would render SF Mono before, but now
     // causes the page to crash
+    // fontCSS =  "100 " +(currentFont.fontSize * fontScale) + "px '"+currentFont.fontName+"', Menlo, monospace"
     fontCSS = (currentFont.fontSize * fontScale) + "px '"+currentFont.fontName+"', Menlo, monospace"
     fontCSSTiny = (currentFont.fontSize * fontScale/2) + "px '"+currentFont.fontName+"', monospace"
     fontCSSEmoji = (currentFont.fontSize * fontScale * .6 * emojiWidth) + "px '"+currentFont.fontName+"', ui-monospace, monospace"
+
+    fontCSSPunctuation = (currentFont.fontSize * fontScale) + "px Menlo, monospace"
+    
     // extraYEmoji = (currentFont.fontSize * fontScale * .6) / 2 / emojiWidth
     extraYEmoji = 0
 }
@@ -3173,14 +2964,17 @@ function cleanUpFiles() {
             } else {
                 // must be pinned
                 if (file.pinned) {
-                    pinnedFiles.push(file)
+                    if (!seenFiles[file.fullPath]) {
+                        pinnedFiles.push(file)
+                        seenFiles[file.fullPath] = true
+                    } else {
+                        filesToClose.push(file)
+                    }
                 } else {
                     filesToClose.push(file)
                 }
             }
-        } else if (file.fileMode == "shell") {
-                filesToClose.push(file)
-        } else if (file.fileMode == "terminal") {
+        } else if (file.fileMode == "terminal" || file.fileMode == "shell") {
             if (file.pinned) {
                 pinnedFiles.push(file)
             } else {
@@ -3441,6 +3235,10 @@ function log(v) {
     logEl.appendChild(d)
     logEl.scrollTop = logEl.scrollHeight
 }
+
+function escapeRegExp(str) {
+    return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
 var hasUpdatedSearchTextForReplaceFlow = false
 function setLastWord(maybeLastWord) {
     if (maybeLastWord != "") {
@@ -3451,7 +3249,7 @@ function setLastWord(maybeLastWord) {
                 if (copyBuffer.length == 1 && copyBuffer[0] == lastWord) {
                     // weird case where the acPlop stuff gets weird with this feature
                 } else {
-                    searchText.value = "\\b" + copyBuffer[0] + "\\b"
+                    searchText.value = "\\b" + escapeRegExp(copyBuffer[0]) + "\\b"
                     saveSearchHistory()
                     // searchText.value = copyBuffer[0]
                     hasUpdatedSearchTextForReplaceFlow = true
@@ -3674,7 +3472,8 @@ function clearLog() {
         fx.cursorLineIndex = 0
         fx.cursorColIndex = 0
         updateCursorXY()
-        fx.offsetY = -minSpaceForHeader
+        // fx.offsetY = -minSpaceForHeader
+        fx.offsetY = 0
         ensureCursorInScreen()
     }
     logEl.innerHTML = ""
@@ -3900,11 +3699,11 @@ function findDown(searchDir, wrap, startTop) {
        startY = 0
     }
     if (document.activeElement != searchText) {
-        if (fx.selectedRegions.length) {
-            searchText.value = getSelectedLines(fx, false, true).lines[0]
+        if (searchText.value == "" && fx.selectedRegions.length) {
+            searchText.value = escapeRegExp(getSelectedLines(fx, false, true).lines[0])
             saveSearchHistory()
             return
-        } else if (searchText.value == "" && !lastFindWasHighlightText) {
+        } else if (searchText.value == "" && !lastFindWasHighlightText && fx.cursorColIndex != -fx.marginLeft) {
             searchText.value = getWordAtCursor().word
             saveSearchHistory()
             if (searchText.value) {
@@ -3915,13 +3714,26 @@ function findDown(searchDir, wrap, startTop) {
             // nextHighlightRange()
             // return
             // navForward()
-            if (fx.cursorColIndex == -fx.marginLeft) { //     red marker
+            if (false && fx.cursorColIndex == -fx.marginLeft) { //     red marker
                 fx.cursorLineIndex++
                 searchText.value = " mar"+"ker$"
                 saveSearchHistory()
                 searchText.preventXNav = true
                 findDown()
                 searchText.value = ""
+            } else if (fx.fileErrors && fx.cursorColIndex == -fx.marginLeft) {
+                var lineNumbers = Object.keys(fx.fileErrors).map(x => x - 0).sort((a, b) => a - b)
+                // set @lineNumbers file @fileErrors keys map {as @x x - 0} sort { as2 @a @b a - b}
+                var curLine = fx.cursorLineIndex + 1
+                for (let i=0; i <lineNumbers.length; i++) {
+                    let ln = lineNumbers[i]
+                    if (ln > curLine && (i == 0 || lineNumbers[i-1] <= curLine)) {
+                        fx.cursorLineIndex = ln - 1
+                        updateCursorXY()
+                        ensureCursorInScreen()
+                        break
+                    }
+                }
             } else {
                 nextHighlightText()
             }
@@ -3967,7 +3779,9 @@ function findDown(searchDir, wrap, startTop) {
             if (!searchText.preventXNav) {
                 fx.cursorColIndex = expandTabIndex(originalLineToSearch, pos, i, fx)
             }
-
+            if (fx.selectedRegions.length) {
+                moveSelectionToCursor(fx.selectedRegions[0])
+            }
             updateCursorXY()
             ensureCursorInScreen()
 
@@ -3983,7 +3797,7 @@ function findDown(searchDir, wrap, startTop) {
     return false
 }
 
-function ensureCursorInScreen(file) {
+function ensureCursorInScreen(file, yOnly) {
     if (!file) {
         file = fx
     }
@@ -3992,17 +3806,22 @@ function ensureCursorInScreen(file) {
     } else if (file.cursorLineIndex >= file.offsetY+maxLines) {
         file.offsetY = file.cursorLineIndex-maxLines +1
     }
-
-    // TODO: there is something more elegant
-    // that you can do here
-    if (file.cursorColIndex < file.offsetX) {
-        //file.offsetX = file.cursorColIndex
-        file.offsetX = file.cursorColIndex - Math.floor(maxCols/2)
-    } else if (file.cursorColIndex > file.offsetX+maxCols) {
-        file.offsetX = file.cursorColIndex - Math.floor(maxCols/2)
+    
+    if (fx.offsetY < 0) {
+        fx.offsetY = 0
     }
-    if (file.offsetX < -file.marginLeft) {
-        file.offsetX = -file.marginLeft
+    if (!yOnly) {
+        // TODO: there is something more elegant
+        // that you can do here
+        if (file.cursorColIndex < file.offsetX) {
+            //file.offsetX = file.cursorColIndex
+            file.offsetX = file.cursorColIndex - Math.floor(maxCols/2)
+        } else if (file.cursorColIndex > file.offsetX+maxCols) {
+            file.offsetX = file.cursorColIndex - Math.floor(maxCols/2)
+        }
+        if (file.offsetX < -file.marginLeft) {
+            file.offsetX = -file.marginLeft
+        }
     }
     updateCursorXY(file)
     render()
@@ -4020,12 +3839,13 @@ function findUp() {
         fx.cursorLineIndex = searchText.value.slice(1) - 1
         ensureCursorInScreen()
     }
-    if (fx.selectedRegions.length) {
-        searchText.value = getSelectedLines(fx, false, true).lines[0]
+    // if (fx.selectedRegions.length) {
+    if (searchText.value == "" && fx.selectedRegions.length) {
+        searchText.value = escapeRegExp(getSelectedLines(fx, false, true).lines[0])
         saveSearchHistory()
         return
     }
-    if (searchText.value == "" && !lastFindWasHighlightText) {
+    if (searchText.value == "" && !lastFindWasHighlightText && fx.cursorColIndex != -fx.marginLeft) {
         searchText.value = getWordAtCursor().word
         saveSearchHistory()
         if (searchText.value) {
@@ -4038,13 +3858,27 @@ function findUp() {
         // navBack()
         
         
-        if (fx.cursorColIndex == -fx.marginLeft) { //     red marker
+        if (false && fx.cursorColIndex == -fx.marginLeft) {
             fx.cursorLineIndex--
             searchText.value = " mar"+"ker$"
             saveSearchHistory()
             searchText.preventXNav = true
             findUp()
             searchText.value = ""
+        } else if (fx.fileErrors && fx.cursorColIndex == -fx.marginLeft) {
+            var lineNumbers = Object.keys(fx.fileErrors).map(x => x - 0).sort((a, b) => a - b)
+            // set @lineNumbers file @fileErrors keys map {as @x x - 0} sort { as2 @a @b a - b}
+            var curLine = fx.cursorLineIndex + 1
+            for (let i=lineNumbers.length-1; i >= 0; i--) {
+                let ln = lineNumbers[i]
+                if (ln < curLine && (i == (lineNumbers.length - 1) || lineNumbers[i+1] >= curLine)) {
+                // if (ln < curLine) and { (i is lineNumbers len - 1) or {lineNumbers at (1+i) >= curLine} }
+                    fx.cursorLineIndex = ln - 1
+                    updateCursorXY()
+                    ensureCursorInScreen()
+                    break
+                }
+            }
         } else {
             prevHighlightText()
         }
@@ -4096,6 +3930,9 @@ function findUp() {
                     // in the future we could probably make the non regexp more consistent where it loops to the last one. (maybe better than reversing string?)
                     fx.cursorColIndex = expandTabIndex(lineToSearch, pos, null, null, "nocache")
                 }
+            }
+            if (fx.selectedRegions.length) {
+                moveSelectionToCursor(fx.selectedRegions[0])
             }
             updateCursorXY()
             ensureCursorInScreen()
@@ -4149,11 +3986,20 @@ function getCommentPrefix() {
     var prefix
     if (
         fx.fullPath.endsWith(".sh") ||
+        fx.fullPath.endsWith(".py") ||
         fx.fullPath.endsWith(".pm") ||
         fx.fullPath.endsWith(".pl") ||
         fx.fullPath.endsWith(".yaml") ||
         fx.fullPath.endsWith(".yml") ||
         fx.fullPath.endsWith(".env") ||
+        fx.fullPath.endsWith(".ch") ||
+        fx.fullPath.endsWith(".ls") ||
+        fx.fullPath.endsWith(".py") ||
+        fx.fullPath.endsWith(".st") ||
+        fx.fullPath.endsWith(".graphqls") ||
+        fx.fullPath.endsWith(".graphql") ||
+        fx.fullPath.endsWith(".conf") ||
+        fx.fullPath.split("/").slice(-1)[0].startsWith(".") ||
         fx.fullPath.split("/").slice(-1)[0].indexOf(".") == -1
     ) {
         // Special case hack for sql script
@@ -4367,7 +4213,7 @@ function clearLog2() {
     // debugOutput = []
     debugOutput.splice(0, debugOutput.length)
 }
-function showLog() {
+function showLog(preventFocus) {
     if (logFile == null || files.indexOf(logFile) == -1) {
         logFile = makeFile("__output", 0, "")
         logFile.fileMode = "file"
@@ -4379,30 +4225,42 @@ function showLog() {
         render()
         return
     }
-    setCurrentFile(logFile)
+    if (!preventFocus) {
+        setCurrentFile(logFile)
+    }
 }
 
-function log2() {
+function log2Internal(pre, args) {
     var logRow = []
-    for (var i=0; i<arguments.length; i++) {
-        if (typeof arguments[i] == "object") {
+    for (var i=0; i<args.length; i++) {
+        if (typeof args[i] == "object") {
             try {
-                logRow.push(JSON.stringify(arguments[i], "", "   "))
+                logRow.push(JSON.stringify(args[i], "", "   "))
             } catch (e) {
                 logRow.push("**curcular**")
             }
             continue
         }
-        logRow.push(arguments[i])
+        logRow.push(args[i])
     }
     var logLines = logRow.join(" ").split("\n")
     for (var i=0; i<logLines.length; i++) {
-        debugOutput.push(logLines[i])
+        if (!pre) {
+            debugOutput.push(logLines[i])
+        } else {
+            debugOutput.unshift(logLines[i])
+        }
     }
     if (logFile) {
         logFile.marginLeft = calcMarginLeft(logFile.lines.length)
     }
     render()
+}
+function log2() {
+    log2Internal(false, arguments)
+}
+function log2Pre() {
+    log2Internal(true, arguments)
 }
 
 
@@ -4420,26 +4278,57 @@ function log2Inline(str) {
         alert(e)
     }
 }
+// var getShellCodeForRunningGoFile = thumbscript4.makeJsFunc(() => { /*
+//     :lines :filename
+//     runCode: []
+//     if. lines[0] •is "// How to run:" {
+//         // 100 max #darkorange
+//         looprange. 1 100 { :i
+//             if. lines[i] trim •is "" {
+//                 breakp
+//             }
+//             runCode •push (lines[i] •slicefrom 3)
+//         }
+//         // joining on cr because that's how terminal wants it
+//         runCode •join cr
+//     }
+//     else. {
+//         // "time go run " •cc filename
+//         "time go run *.go"
+//     }
+// */ })
 
-var getShellCodeForRunningGoFile = thumbscript4.makeJsFunc(() => { /*
-    :lines :filename
-    runCode: []
-    if. lines[0] •is "// How to run:" {
-        // 100 max #darkorange
-        looprange. 1 100 { :i
-            if. lines[i] trim •is "" {
-                breakp
+function getShellCodeForRunningFile(filename, lines, theDefault) {
+    let runCode = [];
+    // Check if first line says // How to run:
+    
+    if (lines[0].startsWith("#!")) {
+        lines = lines.slice(1)
+    }
+    
+    if (lines[0].trim() === "// How to run:" || lines[0].trim() === "// How to install:") {
+        for (let i = 1; i < Math.min(101, lines.length); i++) {
+            if (lines[i].trim() === "") {
+                break;
             }
-            runCode •push (lines[i] •slicefrom 3)
+            runCode.push(lines[i].slice(3));
         }
-        // joining on cr because that's how terminal wants it
-        runCode •join cr
+        return runCode.join('\r');
+    } else if (lines[0].trim() === "# How to run:") {
+        for (let i = 1; i < Math.min(101, lines.length); i++) {
+            if (lines[i].trim() === "") {
+                break;
+            }
+            runCode.push(lines[i].slice(2));
+        }
+        return runCode.join('\r');
+    } else {
+        // Otherwise, return the default command string
+        // return "time go run *.go";
+        return theDefault
     }
-    else. {
-        // "time go run " •cc filename
-        "time go run *.go"
-    }
-*/ })
+}
+
 
 
 function runScript() {
@@ -4465,20 +4354,20 @@ function runScript() {
         addTerminalTab()
         fx.terminalLoadPromise.then(function () {
             // showLog()
-            let code = getShellCodeForRunningGoFile(filename, theScriptLines)
-            // log2(code)
-            // sendTerminal("time go run " + filename, function() {
+            // let code = getShellCodeForRunningFile(filename, theScriptLines, "time go run *.go")
+            let code = getShellCodeForRunningFile(filename, theScriptLines, "go test -race -v")
             sendTerminal(code, function() {
                 saveWrapper() // hits Enter
             })
         })
         return
     }
-    if (isWholeFile && fx.fullPath.endsWith(".sh")) {
+    if (isWholeFile && (fx.fullPath.endsWith(".sh") || fx.fullPath.endsWith(".ls") || fx.fullPath.endsWith(".st"))) {
         let filename = fx.fullPath.split("/").slice(-1)
+        let code = getShellCodeForRunningFile(filename, theScriptLines, "./" + filename)
         addTerminalTab()
         fx.terminalLoadPromise.then(function () {
-            sendTerminal("./" + filename, function() {
+            sendTerminal(code, function() {
                 saveWrapper() // hits Enter
             })
         })
@@ -4494,11 +4383,29 @@ function runScript() {
         })
         return
     }
-    if (theScriptLines[0] == "#thumbscript" || theScriptLines[0] == "#ths") {
-            // lol
-            thumbscriptWorld = thumbscript4.eval(theScriptLines.join("\n"), window) // lol the window
-            // alert(thumbscriptWorld)
-            // return w.stack.pop()
+    if (isWholeFile && fx.fullPath.endsWith(".py")) {
+        let filename = fx.fullPath.split("/").slice(-1)
+        addTerminalTab()
+        fx.terminalLoadPromise.then(function () {
+            sendTerminal("python3 " + filename, function() {
+                saveWrapper() // hits Enter
+            })
+        })
+        return
+    }
+    if (isWholeFile && (fx.lines[0] || "").startsWith("#!")) {
+        let filename = fx.fullPath.split("/").slice(-1)
+        addTerminalTab()
+        fx.terminalLoadPromise.then(function () {
+            sendTerminal("./" + filename, function() {
+                saveWrapper() // hits Enter
+            })
+        })
+        return
+    }
+    
+    if (false && theScriptLines[0] == "#thumbscript" || theScriptLines[0] == "#ths") {
+            // thumbscriptWorld = thumbscript4.eval(theScriptLines.join("\n"), window) // lol the window
     } else {
         // add return to the last non-empty line
         for (var i=theScriptLines.length-1; i>=0; i--) {
@@ -4521,12 +4428,13 @@ function runScript() {
     }
     
     showLog()
-    if (thumbscriptWorld) {
+    if (false && thumbscriptWorld) {
         // only one at a time for now
         logFile.thumbscriptWorld = thumbscriptWorld
     }
 }
 
+// deprecated
 async function runChatGPTNonStreaming(model, options) {
     alert("yay!")
     var selectedLinesWrapper = getSelectedLines(fx, false, true);
@@ -4647,7 +4555,6 @@ async function runChatGPT(model, options) {
         fx.cursorLineIndex++
     }
 
-    
     // docChanged()
     if (selectedLinesWrapper.isWholeFile) {
         fx.chatGPTCursorLineIndex = fx.lines.length - 1
@@ -4718,6 +4625,7 @@ function diffFiles() {
     var aLines = getSelectedLines(lastFile).lines
     var bLines = getSelectedLines(fx).lines
 
+    // var contents = simpleDiffOld3(aLines, bLines, false).join("\n")
     var start = Date.now()
     var contents = simpleDiffOld3(aLines, bLines, false).join("\n")
     var f3 = makeFile("__diffOld3", 0, contents)
@@ -4726,19 +4634,20 @@ function diffFiles() {
     addFileToList(f3)
     setCurrentFile(f3)
 
-    // var oldContents = aLines.join("\n")
-    // var newContents = bLines.join("\n")
-    // var start = Date.now()
-    // var contents = Diff.createPatch("foo", oldContents, newContents, "", "", {context:0})
-    // // var contents = Diff.createPatch("foo", "aaaaa", "bbbbbb", "", "")
-    // var f4 = makeFile("__diffMyers", 0, contents)
-    // f4.fileMode = "file"
-    // f4.cursorLineIndex = 0
-    // addFileToList(f4)
-    // setCurrentFile(f4)
-
     updateCursorXY()
     ensureCursorInScreen()
+    
+    return
+
+    runQuickShellCommand("git diff --no-index " + lastFile.fullPath + " " + fx.fullPath, function(err, contents) {
+        var f3 = makeFile("__diffOld3", 0, contents)
+        f3.fileMode = "file"
+        f3.cursorLineIndex = 0
+        addFileToList(f3)
+        setCurrentFile(f3)
+        updateCursorXY()
+        ensureCursorInScreen()
+    })
 }
 
 // this is a little hacky by changing and restoring state.
@@ -4964,12 +4873,11 @@ function scriptLines() {
     
     var expectedFx = fx
     
-    // second-most-recent file
-    var _t = getSelectedLines(lastFile, false)
+    var _t = getSelectedLines(expectedFx, true)
     var linesToProcess = _t.lines
     var isWholeFile = _t.isWholeFile
 
-    var theScriptLines = getSelectedLines(expectedFx, false).lines
+    var theScriptLines = getSelectedLines(lastFile, false).lines
     
     if (theScriptLines.length) {
         // add return to the last non-empty line
@@ -5000,12 +4908,12 @@ function scriptLines() {
             retLines.push(line)
         }
     }
-    setCurrentFile(lastFile) // second-most-recent file
     if (isWholeFile) {
         setLines(retLines)
         docChanged()
     } else {
         pasteLines(retLines, false, false)
+        expectedFx.cursorLineIndex++
     }
 
     preventRender = oldPreventRender
@@ -5149,15 +5057,24 @@ function setCanvasHeight(h) {
     if (verticalTouchSize * 5 > (canvasHeight/3)) {
         verticalTouchSize = (canvasHeight/3) / 5
     }
+
+    if (verticalTouchSize * 5 < (canvasHeight/3 /2)) {
+        verticalTouchSize = (canvasHeight/3) * (0.66) / 5
+    }
+
+
     if (verticalTouchSize < 50) {
          verticalTouchSize = 50
     }
     
     // verticalTouchSize = (h/3)/5 // 5 buttons
     // verticalTouchSize = (h/3)/7 // 
-    if (verticalTouchSize > 130) {
-        verticalTouchSize = 130
-    }
+
+
+
+    // if (verticalTouchSize > 130) {
+    //     verticalTouchSize = 130
+    // }
 }
 function setCanvasHeightAccordingly() {
     var heightReduction = 0
@@ -5895,7 +5812,8 @@ function runShellCommand(line) {
             fx.cursorLineIndex = 0
             fx.cursorColIndex = 0
             updateCursorXY()
-            fx.offsetY = -minSpaceForHeader
+            // fx.offsetY = -minSpaceForHeader
+            fx.offsetY = 0
             // render()
             // return
             line = "p"
@@ -6040,7 +5958,558 @@ function handleChatGPTResponse(file, responses) {
 }
 var allowPolling = true
 var isPollingTerminal = false
+var lastPolled = null
+var lastAborted = null
+var lastPollResponse = null
+var lastPollError = null
+var pollInFlight = null
+// allow hangups and newSession
+
+
+
+function processPollResponse(wrapperR) {
+    // map of terminals and their payload and maybe meta info
+    if (wrapperR.PasteBuffer) {
+        copyBuffer = wrapperR.PasteBuffer.split("\n")
+    }
+    var r = wrapperR.Files
+    for (var id in r) {
+        var termInfo = r[id]
+        var file = files.find(f => f.ID == id)
+        var lineLengthBeforeChange = file.lines.length
+        if (!file) {
+            // TODO: this can happen if we get the response for
+            // the poll before we even have the ID
+            // we could store these values temporarily?
+            // but for now we'll ignore them.
+            continue
+        }
+        if (termInfo.ChatGPTResponses && termInfo.ChatGPTResponses.length) {
+            handleChatGPTResponse(file, termInfo.ChatGPTResponses)
+        }
+        if (termInfo.FileErrors) {
+            // reset them all
+            file.fileErrors = termInfo.FileErrors
+            render()
+        }
+        if (!termInfo.Base64) {
+            continue
+        }
+        var oldCopyBuffer = copyBuffer
+        // btoa("hello")
+        // atob("aGVsbG8=")
+        // #todoterminal: add xterm parsing here!
+        processTerminal(termInfo.Base64, file)
+        // don't move the cursor if they are looking up higher in the file
+        if (file.cursorLineIndex >= (lineLengthBeforeChange - 1)) {
+            file.cursorLineIndex = file.lines.length - 1
+            var theLine = file.lines[file.lines.length-1]
+            if (theLine != "") {
+                file.cursorColIndex = expandTabIndex(theLine, theLine.length, file.lines.length-1, file)
+            } else {
+                theLine = file.lines[file.lines.length-2] || ""
+                file.cursorColIndex = expandTabIndex(theLine, theLine.length, file.lines.length-2, file)
+            }
+            ensureCursorInScreen(file, true)
+        }
+
+    }
+    render()
+    setTimeout(pollTerminals, 1)
+}
+
+
+// function processTerminal(theBase64, file) {
+//     var strToProcess = atob(theBase64)
+//     log(strToProcess)
+//     log(JSON.stringify(strToProcess))
+//     // simple parsing for now
+// 
+//     // TODO: what if the chunk we get ends on a control character.
+//     // Maybe we need to preserve the parseState to the file object.
+//     var parseState = "literal"
+//     var controlValues = [""]
+//     var lineBuffer = []
+//     for (var i = 0; i < strToProcess.length; i++) {
+//         log(["looping", i, strToProcess.length])
+//         // not calling docChanged because we don't care for terminals
+//         var theChr = strToProcess[i]
+//         switch (parseState) {
+//             case "literal":
+//                 if (strToProcess[i] == "\n") {
+//                     updateLineFile(file, file.lines.length-1, file.lines[file.lines.length-1] + lineBuffer.join(""))
+//                     lineBuffer = []
+//                     file.lines.push("")
+//                     file.marginLeft = calcMarginLeft(file.lines.length)
+//                 // for  now commenting out \r, later do I need to code the difference between newline and carriage return?
+//                 } else if (strToProcess[i] == "\r") {
+//                     // file.lines.push("")
+//                     // do nothing for now
+//                 } else if (strToProcess[i] == "\b") {
+//                     // copied from another part of this code // == 8
+//                     var theLine = file.lines[file.cursorLineIndex]
+//                     if (theLine.length == 0) {
+//                         file.lines.splice(file.cursorLineIndex, 1)
+//                         adjustHighlightRanges(file.cursorLineIndex, -1, file)
+//                         file.cursorLineIndex -= 1
+//                         var prevLine = file.lines[file.cursorLineIndex]
+//                         // file.lines[file.cursorLineIndex] = file.lines[file.cursorLineIndex] + theLine
+//                         updateLineFile(file, file.cursorLineIndex, file.lines[file.cursorLineIndex] + theLine)
+//                         // TODO: process the index here!!!
+//                         file.cursorColIndex = prevLine.length
+//                         setSelectionRangeForText(prevLine.length, prevLine.length)
+//                     } else {
+//                         // file.lines[file.lines.length-1] = theLine.slice(0, -1)
+//                         updateLineFile(file, file.lines.length-1, theLine.slice(0, -1))
+//                     }
+//                 } else if (strToProcess[i] == "\x1b") { // escape
+//                     parseState = "ESC"
+//                 } else if (strToProcess[i] == "\x07") { // bell
+//                     // do nothing
+//                 } else {
+//                     // Todo: look at how the \b works with lineBuffer. May be more optimal to do it that way.
+//                     lineBuffer.push(strToProcess[i])
+//                 }
+//                 break;
+//             case "ESC":
+//                 switch (theChr) {
+//                     case "[":
+//                         controlValues = [""]
+//                         parseState = "CSI"
+//                         break;
+//                     default:
+//                         parseState = "literal" // for now
+// 
+//                 }
+//                 break;
+//             case "CSI":
+//                 switch (theChr) {
+//                     case "0":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "1":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "2":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "3":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "4":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "5":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "6":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "7":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "8":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case "9":
+//                         controlValues[controlValues.length-1] += theChr
+//                         break;
+//                     case ";":
+//                         controlValues.push("")
+//                         break;
+//                     case "K":
+//                         // TODO: clear parts of line according to rules
+//                         parseState = "literal"
+//                         break;
+//                     default:
+// 
+//                         parseState = "literal" // for now
+// 
+//                 }
+//                 break;
+//         }
+//     }
+//     if (lineBuffer.length) {
+//         updateLineFile(file, file.lines.length-1, file.lines[file.lines.length-1] + lineBuffer.join(""))
+//     }
+// }
+
+
+// Please finish handling terminal commanda
+// you don't need to actually implement all things, just have a placeholder and comments
+// for how to respond to all cases, but keep the existing handling there.
+// add any more comments you want.
+// Prefix your comments with "// AI:" to differentiate them from my comments.
+// 
+// Here’s an expanded version of your `processTerminal` function. I’ve left your existing logic intact, added placeholders for all the common CSI and ESC sequences you’ll likely need, and prefixed my comments with `// AI:`. Feel free to fill in the stubs with your real implementations later.
+// 
+// ```javascript
+function processTerminal(theBase64, file) {
+    var strToProcess = atob(theBase64)
+    // log(strToProcess)
+    // log(JSON.stringify(strToProcess))
+    // simple parsing for now
+
+    // TODO: what if the chunk we get ends on a control character.
+    // Maybe we need to preserve the parseState to the file object.
+    var parseState = "literal"
+    var controlValues = [""]
+    var lineBuffer = []
+    let privateMode = false;
+    let carriagePos = 0;
+
+    for (var i = 0; i < strToProcess.length; i++) {
+        var theChr = strToProcess[i]
+        switch (parseState) {
+            case "literal":
+                if (theChr == "\n") {
+                    updateLineFile(file, file.lines.length - 1,
+                                   file.lines[file.lines.length - 1] + lineBuffer.join(""))
+                    lineBuffer = []
+                    file.lines.push("")
+                    file.marginLeft = calcMarginLeft(file.lines.length)
+
+                } else if (theChr == "\r") {
+                    // file.lines.push("")
+                    // AI: carriage return - could reset cursor to col 0
+                    // handleCarriageReturn()
+                    carriagePos = 0
+                } else if (theChr == "\b") {
+                    if (lineBuffer.length) {
+                        lineBuffer = lineBuffer.slice(0, -1)
+                    } else {
+                        // copied from another part of this code // == 8
+                        var theLine = file.lines[file.cursorLineIndex]
+                        if (theLine.length == 0) {
+                            file.lines.splice(file.cursorLineIndex, 1)
+                            adjustHighlightRanges(file.cursorLineIndex, -1, file)
+                            file.cursorLineIndex -= 1
+                            var prevLine = file.lines[file.cursorLineIndex]
+                            updateLineFile(file, file.cursorLineIndex,
+                                           file.lines[file.cursorLineIndex] + theLine)
+                            file.cursorColIndex = prevLine.length
+                            setSelectionRangeForText(prevLine.length, prevLine.length)
+                        } else {
+                            updateLineFile(file, file.lines.length - 1,
+                                           theLine.slice(0, -1))
+                        }
+                    }
+                    carriagePos = file.lines[file.cursorLineIndex].length
+                } else if (theChr == "\x1b") { // ESC
+                    parseState = "ESC"
+                    // AI: entering escape sequence
+
+                } else if (theChr == "\x07") { // BEL
+                    // do nothing
+                    // AI: you might flash terminal or play a sound
+
+                } else {
+                    lineBuffer.push(theChr)
+                }
+                break
+
+            case "ESC":
+                switch (theChr) {
+                    case "[":
+                        controlValues = [""]
+                        parseState = "CSI"
+                        privateMode   = false;      // reset for each new CSI
+                        break
+                    case "]":
+                        // AI: OSC (Operating System Command)
+                        // stub: handleOSC(the following data until BEL or ESC '\\')
+                        parseState = "OSC"
+                        // AI: collect characters for OSC
+                        break
+                    case "7":
+                        // AI: DECSC - Save cursor
+                        // stub: saveCursorPosition()
+                        parseState = "literal"
+                        break
+                    case "8":
+                        // AI: DECRC - Restore cursor
+                        // stub: restoreCursorPosition()
+                        parseState = "literal"
+                        break
+                    case "(":
+                        // AI: Select G0 character set
+                        // stub: selectCharsetG0(nextChar)
+                        parseState = "charsetG0"
+                        break
+                    case ")":
+                    case "*":
+                    case "+":
+                        // AI: Other charset invocations
+                        parseState = "charset"
+                        break
+                    default:
+                        // AI: unhandled ESC sequence, drop it
+                        parseState = "literal"
+                }
+                break
+
+            case "CSI":
+                // AI: Control Sequence Introducer
+                if (theChr === "?") {
+                    // remember that this is a DEC private‐mode sequence
+                    privateMode = true;
+                } else if (theChr >= "0" && theChr <= "9") {
+                    controlValues[controlValues.length - 1] += theChr
+                } else if (theChr == ";") {
+                    controlValues.push("")
+                } else {
+                    if (privateMode && (theChr === "h" || theChr === "l")) {
+                      // DECSET (h) / DECRST (l)
+                      const enable = (theChr === "h");
+                      controlValues.forEach(param => {
+                        switch (param) {
+                          case "2004":
+                            // bracketed‐paste mode
+                            // this.bracketedPaste = enable;
+                            break;
+                          // you can add more DEC private modes here:
+                          // case "25":  // cursor on/off
+                          // case "?7":  // wraparound mode
+                          // …
+                          default:
+                            // log(`Unhandled DEC private mode ?${param}${theChr}`);
+                        }
+                      });
+                    } else {
+                        // final byte of CSI
+                        switch (theChr) {
+                            case "A":
+                                // Cursor Up
+                                // stub: cursorUp(parseInt(controlValues[0]||1))
+                                break
+                            case "B":
+                                // Cursor Down
+                                // stub: cursorDown(parseInt(controlValues[0]||1))
+                                break
+                            case "C":
+                                // Cursor Forward
+                                // stub: cursorForward(parseInt(controlValues[0]||1))
+                                break
+                            case "D":
+                                // Cursor Backward
+                                // stub: cursorBackward(parseInt(controlValues[0]||1))
+                                break
+                            case "E":
+                                // Cursor Next Line
+                                // stub: cursorNextLine(parseInt(controlValues[0]||1))
+                                break
+                            case "F":
+                                // Cursor Previous Line
+                                // stub: cursorPrevLine(parseInt(controlValues[0]||1))
+                                break
+                            case "G":
+                                // Cursor Horizontal Absolute
+                                // stub: cursorToColumn(parseInt(controlValues[0]||1))
+                                break
+                            case "H":
+                            case "f":
+                                // Cursor Position
+                                // stub: cursorPosition(parseInt(controlValues[0]||1), parseInt(controlValues[1]||1))
+                                break
+                            case "J":
+                                // Erase in Display
+                                // stub: eraseInDisplay(parseInt(controlValues[0]||0))
+
+                                let parameter = controlValues[0]||0
+                                if (parameter == 0) {
+                                    // hack but seems to work
+                                    lineBuffer = []
+                                    // updateLineFile(file, file.lines.length - 1, theLine.slice(0, cursorPosition))
+                                }
+                                break
+                            case "K":
+                                // Erase in Line
+                                // stub: eraseInLine(parseInt(controlValues[0]||0))
+                                break
+                            case "m":
+                                // Character Attributes (SGR)
+                                // stub: setGraphicsRendition(controlValues.map(Number))
+                                break
+                            case "s":
+                                // Save Cursor (DECSC)
+                                // stub: saveCursorPosition()
+                                break
+                            case "u":
+                                // Restore Cursor (DECRC)
+                                // stub: restoreCursorPosition()
+                                break
+                            // AI: add any other CSI final bytes you need, e.g. 'r', 'h', 'l'
+                            default:
+                                // AI: unhandled CSI code: log or ignore
+                                // log("Unhandled CSI " + theChr + " params: " + controlValues.join(";"))
+                        }
+                    }
+                    parseState = "literal"
+                }
+                break
+
+            // what about handling the [?2004h here?
+            // This will properly handle [?2004h (turn on) and [?2004l (turn off), and gives you
+
+            case "OSC":
+                // AI: collect until BEL (\x07) or ESC '\'
+                if (theChr == "\x07") {
+                    // stub: handleOSCCommand(oscBuffer)
+                    parseState = "literal"
+                } else if (theChr == "\x1b") {
+                    // maybe ESC \ sequence terminator
+                    parseState = "OSC_ESC"
+                } else {
+                    // AI: accumulate OSC characters
+                    // oscBuffer.push(theChr)
+                }
+                break
+
+            case "OSC_ESC":
+                if (theChr == "\\") {
+                    // end of OSC
+                    // stub: handleOSCCommand(oscBuffer)
+                }
+                parseState = "literal"
+                break
+
+            case "charsetG0":
+                // AI: G0 charset selection done
+                // stub: applyG0Charset(theChr)
+                parseState = "literal"
+                break
+
+            case "charset":
+                // AI: other charset selection done
+                // stub: applyCharset(parseState, theChr)
+                parseState = "literal"
+                break
+
+            default:
+                // AI: should not reach here
+                parseState = "literal"
+        }
+    }
+
+    if (lineBuffer.length) {
+        updateLineFile(file, file.lines.length - 1,
+                       file.lines[file.lines.length - 1] + lineBuffer.join(""))
+       carriagePos = file.lines[file.lines.length - 1].length
+    }
+}
+// ```
+
+// Feel free to flesh out the `stub:` calls with real implementations. The `// AI:` comments indicate where and how each sequence should
+// 
+// Thank you, does any of this handle terminal colors?
+// 
+// The short answer is: not yet—in the snippet above colors live behind the CSI “m” (SGR) handler, but we left that as a stub. Everything you need for colors comes in as numbers in your `controlValues` array when you hit the final byte “m”. At that point you interpret codes like:
+// 
+//   • 0   → reset all attributes  
+//   • 1   → bold  
+//   • 4   → underline  
+//   • 30–37 → set foreground color (black, red, green, …, white)  
+//   • 40–47 → set background color  
+//   • 90–97 → bright foreground colors  
+//   • 100–107 → bright background colors  
+// 
+// Here’s a quick sketch of how you might flesh out `setGraphicsRendition()` to actually apply colors. You’ll need to decide how you track “current text style” (e.g. an attribute object attached to each character, or wrapping spans in your UI, etc.):
+// 
+// ```javascript
+// // AI: stub for SGR (Select Graphic Rendition) – i.e. colors, bold, underline, etc.
+// function setGraphicsRendition(params) {
+//   // AI: params is an array of numbers, e.g. [ '1', '31' ] → [1, 31]
+//   var codes = params.map(function(p) { return Number(p) || 0 });
+//   codes.forEach(function(code) {
+//     switch (code) {
+//       case 0:
+//         // AI: reset all styles to default
+//         currentStyle = { fg: null, bg: null, bold: false, underline: false };
+//         break;
+// 
+//       case 1:
+//         currentStyle.bold = true;
+//         break;
+//       case 4:
+//         currentStyle.underline = true;
+//         break;
+// 
+//       // AI: foreground colors
+//       case 30: case 31: case 32: case 33:
+//       case 34: case 35: case 36: case 37:
+//         currentStyle.fg = code - 30;  // map 30→0(black), 31→1(red),...
+//         break;
+// 
+//       // AI: background colors
+//       case 40: case 41: case 42: case 43:
+//       case 44: case 45: case 46: case 47:
+//         currentStyle.bg = code - 40;
+//         break;
+// 
+//       // AI: bright foregounds
+//       case 90: case 91: case 92: case 93:
+//       case 94: case 95: case 96: case 97:
+//         currentStyle.fg = code - 90 + 8; // extended to bright palette
+//         break;
+// 
+//       // AI: bright backgrounds
+//       case 100: case 101: case 102: case 103:
+//       case 104: case 105: case 106: case 107:
+//         currentStyle.bg = code - 100 + 8;
+//         break;
+// 
+//       // AI: more SGR codes (e.g. italics 3, strike 9, inverse 7, etc.) go here
+//       default:
+//         console.log("Unhandled SGR code:", code);
+//     }
+//   });
+// }
+// 
+// // Then in CSI final-byte "m" handler:
+// case "m":
+//   setGraphicsRendition(controlValues);
+//   break;
+// ```
+// 
+// How you actually *render* that depends on your editor/terminal widget:
+// 
+//   • If you’re building HTML, you might wrap your `lineBuffer` contents in `<span>` tags with appropriate CSS classes for fg/bg/bold, and then flush them to the DOM.
+// 
+//   • If you have a more structured text model, you could store each character with an attribute object `{char, style}`.
+// 
+// Bottom line: everything for colors flows through the CSI “m” branch. You just need to implement `setGraphicsRendition()` (or whatever you name it) to map SGR codes to your renderer’s color/bold/underline/etc. system.
+
+
+// this abortcontroller snippet needed for me since ios18
+// if the homescreen app was backgrounded for like 1 minuye
+// the current fetch request for polling would hang
+// it would eventually work but this helps it along
+var abortController = new AbortController()
+document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") {
+        // log2Pre(new Date(), "aborting")
+        log("a: " + new Date().toLocaleTimeString())
+        lastAborted = new Date()
+        abortController.abort()
+        abortController = new AbortController()
+        render()
+    }
+});
+
+function timeWithMillis() {
+    var d = new Date()
+    return `${d.toLocaleTimeString()}.${d.getMilliseconds()}`
+}
+var pollId = 0
 function pollTerminals() {
+    // log("p: " + timeWithMillis())
+    pollId++
+    // showLog(true)
+    // log2Pre(new Date(), pollId, "pollTerminals")
+    lastPolled = new Date()
+    lastPollResponse = null
+    lastPollError = null
+    render()
     if (!allowPolling) {
         // so we can manually disable polling
         return false
@@ -6051,176 +6520,30 @@ function pollTerminals() {
     //     isPollingTerminal = false
     //     return
     // }
+    pollInFlight = true
     fetch(proxyPath + "/myterminalpoll?clientid=" + clientId, {
-        cache: "no-cache"
+        cache: "no-cache",
+        signal: abortController.signal
     }).then(r => {
         return r.json()
     }).then(wrapperR => {
-        // map of terminals and their payload and maybe meta info
-        if (wrapperR.PasteBuffer) {
-            copyBuffer = wrapperR.PasteBuffer.split("\n")
-        }
-        var r = wrapperR.Files
-        for (var id in r) {
-            var termInfo = r[id]
-            var file = files.find(f => f.ID == id)
-            var lineLengthBeforeChange = file.lines.length
-            if (!file) {
-                // TODO: this can happen if we get the response for
-                // the poll before we even have the ID
-                // we could store these values temporarily?
-                // but for now we'll ignore them.
-                continue
-            }
-            if (termInfo.ChatGPTResponses && termInfo.ChatGPTResponses.length) {
-                handleChatGPTResponse(file, termInfo.ChatGPTResponses)
-                setTimeout(pollTerminals, 1)
-                return
-            }
-            var oldCopyBuffer = copyBuffer
-            // btoa("hello")
-            // atob("aGVsbG8=")
-            // #todoterminal: add xterm parsing here!
-            var strToProcess = atob(termInfo.Base64)
-            // simple parsing for now
-
-            // TODO: what if the chunk we get ends on a control character.
-            // Maybe we need to preserve the parseState to the file object.
-            var parseState = "literal"
-            var controlValues = [""]
-            var lineBuffer = []
-            for (var i = 0; i < strToProcess.length; i++) {
-                // not calling docChanged because we don't care for terminals
-                // doing this very dumb now... more optimizations later
-                var theChr = strToProcess[i]
-                switch (parseState) {
-                    case "literal":
-                        if (strToProcess[i] == "\n") {
-                            updateLineFile(file, file.lines.length-1, file.lines[file.lines.length-1] + lineBuffer.join(""))
-                            lineBuffer = []
-                            file.lines.push("")
-                            file.marginLeft = calcMarginLeft(file.lines.length)
-                        // for  now commenting out \r, later do I need to code the difference between newline and carriage return?
-                        } else if (strToProcess[i] == "\r") {
-                            // file.lines.push("")
-                            // do nothing for now
-                        } else if (strToProcess[i] == "\b") {
-                            // copied from another part of this code // == 8
-                            var theLine = file.lines[file.cursorLineIndex]
-                            if (theLine.length == 0) {
-                                file.lines.splice(file.cursorLineIndex, 1)
-                                adjustHighlightRanges(file.cursorLineIndex, -1, file)
-                                file.cursorLineIndex -= 1
-                                var prevLine = file.lines[file.cursorLineIndex]
-                                // file.lines[file.cursorLineIndex] = file.lines[file.cursorLineIndex] + theLine
-                                updateLineFile(file, file.cursorLineIndex, file.lines[file.cursorLineIndex] + theLine)
-                                // TODO: process the index here!!!
-                                file.cursorColIndex = prevLine.length
-                                setSelectionRangeForText(prevLine.length, prevLine.length)
-                            } else {
-                                // file.lines[file.lines.length-1] = theLine.slice(0, -1)
-                                updateLineFile(file, file.lines.length-1, theLine.slice(0, -1))
-                            }
-                        } else if (strToProcess[i] == "\x1b") { // escape
-                            parseState = "ESC"
-                        } else if (strToProcess[i] == "\x07") { // bell
-                            // do nothing
-                        // } else if (strToProcess[i] == "\t") { // tab
-                        } else {
-                            // file.lines[file.lines.length-1] += strToProcess[i]
-                            // updateLineFile(file, file.lines.length-1, file.lines[file.lines.length-1] + strToProcess[i])
-                            // Todo: look at how the \b works with lineBuffer. May be more optimal to do it that way.
-                            lineBuffer.push(strToProcess[i])
-                        }
-                        break;
-                    case "ESC":
-                        switch (theChr) {
-                            case "[":
-                                controlValues = [""]
-                                parseState = "CSI"
-                                break;
-                            default:
-                                parseState = "literal" // for now
-
-                        }
-                        break;
-                    case "CSI":
-                        switch (theChr) {
-                            case "0":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "1":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "2":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "3":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "4":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "5":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "6":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "7":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "8":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case "9":
-                                controlValues[controlValues.length-1] += theChr
-                                break;
-                            case ";":
-                                controlValues.push("")
-                                break;
-                            case "K":
-                                // TODO: clear parts of line according to rules
-                                parseState = "literal"
-                                break;
-                            default:
-                                // TODO: some action based the character here
-                                // add textual representation for debugging purposes
-                                // uncomment to debug
-                                // file.lines[file.lines.length - 1] += " <ESC[" + controlValues.join(";") + theChr + "> "
-                                // updateLineFile(file, file.lines.length - 1, file.lines[file.lines.length - 1] + " <ESC[" + controlValues.join(";") + theChr + "> ")
-
-                                parseState = "literal" // for now
-
-                        }
-                        break;
-                }
-            }
-            if (lineBuffer.length) {
-                updateLineFile(file, file.lines.length-1, file.lines[file.lines.length-1] + lineBuffer.join(""))
-            }
-
-            // don't move the cursor if they are looking up higher in the file
-            if (file.cursorLineIndex >= (lineLengthBeforeChange - 1)) {
-                file.cursorLineIndex = file.lines.length - 1
-                var theLine = file.lines[file.lines.length-1]
-                if (theLine != "") {
-                    file.cursorColIndex = expandTabIndex(theLine, theLine.length, file.lines.length-1, file)
-                } else {
-                    theLine = file.lines[file.lines.length-2] || ""
-                    file.cursorColIndex = expandTabIndex(theLine, theLine.length, file.lines.length-2, file)
-                }
-                ensureCursorInScreen(file)
-            }
-        }
+        // log("r: " + timeWithMillis())
+        // log2Pre(new Date(), pollId, "successPoll")
+        pollInFlight = false
+        lastPollResponse = new Date()
         render()
-        setTimeout(pollTerminals, 1)
+        processPollResponse(wrapperR)
     }).catch(e => {
+        log("e: " + timeWithMillis())
+        // log2Pre(new Date(), pollId, "failPoll")
         // todo: does an error in the prev block also go here
         // if so we need to make sure we don't double poll
         // as a double check, in the polling code if there id a request
         // in-flight, don't poll again.
         // alert("polling error: " + e)
+        lastPollError = new Date()
+        pollInFlight = false
+        render()
         setTimeout(pollTerminals, 1)
     })
 }
@@ -6971,6 +7294,10 @@ function saveFile(f) {
     return p
 }
 function save(saveDiffsLocal) {
+    // delete it, they will come back if needed
+    for (let f of files) {
+        delete f.fileErrors
+    }
     var resolve; var reject; var p = new Promise(function(res, rej) { resolve = res; reject = res });
     
     // using a single for loop to
@@ -7645,11 +7972,22 @@ function render() {
         theStatus.lastCleared = lastCleared
         theStatus.tvr = totalViewRequests
         theStatus.tvbs = (totalViewBytesSent).toLocaleString()
+        theStatus.fileErrors = fx.fileErrors
+        theStatus.currTime__ = new Date()
+        theStatus.lastPolled = lastPolled
+        theStatus.lastAborted = lastAborted
+        theStatus.lastPollResponse = lastPollResponse
+        theStatus.lastPollError = lastPollError
+        theStatus.isPollingTerminal = isPollingTerminal
+        theStatus.pollInFlight = pollInFlight
+        
+        
+        
         // theStatus.overflowX = overflowX
         // theStatus.overflowY = overflowY
         // theStatus.hasDoneOverflowYAction = hasDoneOverflowYAction
-        theStatus.CB = JSON.stringify(copyBuffer)
-        theStatus.oldCB = JSON.stringify(globalOldCopyBuffer)
+        // theStatus.CB = JSON.stringify(copyBuffer)
+        // theStatus.oldCB = JSON.stringify(globalOldCopyBuffer)
         if (fx.iframe) {
             theStatus.iframeCursorX = fx.iframeCursorX
             theStatus.iframeCursorY = fx.iframeCursorY
@@ -7752,6 +8090,13 @@ function render() {
 
     c.width = c.width // one way to clear
     renderInternal()
+    // try {
+    //     addCRT()
+    // } catch (e) {
+    //     alert(e)
+    // }
+    
+    
 
     if (serverViewFeature) {
         renderServerView()
@@ -7839,17 +8184,14 @@ function renderSaves() {
     if (fx.fileMode == "file")   {
         if (fx.savingVersion != -1) {
             saveButton.style.backgroundColor = "gray"
-            saveIcon.style.backgroundColor = "gray"
             saveButton.innerText = "saving"
             renpderedSaveRed = false
         } else if (fx.version == fx.savedVersion) {
             saveButton.style.backgroundColor = ""
-            saveIcon.style.backgroundColor = ""
             saveButton.innerText = "saved"
             renderedSaveRed = false
         } else if (!renderedSaveRed) {
             saveButton.style.backgroundColor = "red"
-            saveIcon.style.backgroundColor = "red"
             saveButton.innerText = "save"
             renderedSaveRed = true
         }
@@ -8035,6 +8377,14 @@ function renderInternal() {
         iframeCursor.style.left = (fx.iframeCursorX-5) + "px"
         return
     }
+    // if ('filter' in t) {
+    //   t.filter = "blur(10px)";
+    // } else {
+    //   t.shadowColor = "gray";
+    //   t.shadowBlur = 15;
+    //   t.shadowOffsetX = 0;
+    //   t.shadowOffsetY = 0;
+    // }
     
     if (false) {
     // if (true) {
@@ -8053,16 +8403,17 @@ function renderInternal() {
     var underlineOffset = (fontHeight) - (1/6/2 * fontHeight)
     // var underlineHeight = fontHeight/6
     var underlineHeight = fontHeight/12
-    // var highlightLine = true
     var highlightLine = true
+    // var highlightLine = false
     if (highlightLine) {
         // t.fillStyle = "rgba(0, 255, 255, 0.15)"
         // more apparent highlight line
         if (isDark) {
             // temp experiment with darker line
             // t.fillStyle = "rgba(0, 128, 128, 0.55)"
-            t.fillStyle = "rgba(0, 128, 128, 0.55)"
             // t.fillStyle = "rgba(128, 128, 128, 0.55)"
+            // t.fillStyle = "rgba(0, 128, 128, 0.55)"
+            t.fillStyle = "rgba(0, 128, 128, 0.45)"
         } else {
             // t.fillStyle = "rgba(0, 255, 255, 0.55)"
             // t.fillStyle = "rgba(192, 192, 192, 0.55)"
@@ -8274,9 +8625,15 @@ function renderInternal() {
             theLine = headers[y]
             trimmedLine = theLine.trim()
             theIndex = headerIndexes[y]
-            t.fillStyle = "#222"
+            if (isDark) {
+                t.fillStyle = "#222"
+                textFillStyleOverride = "#aaa"
+            } else {
+                t.fillStyle = "white"
+                textFillStyleOverride = "#222"
+            }
+
             t.fillRect(0, y * fontHeight, c.width*3, fontHeight)
-            textFillStyleOverride = "#aaa"
         } else {
             textFillStyleOverride = ""
         }
@@ -8514,7 +8871,9 @@ function renderInternal() {
                         var stringedLine = (fx.lines[theIndex] || "").toString()
                         var stringedLinePrev = (fx.lines[theIndex - 1] || "").toString()
                         // we use toString because of the new String() hack
-                        if (stringedLine != "" && stringedLinePrev == stringedLine) {
+                        if (fx.fileErrors && fx.fileErrors[theIndex+1]) {
+                            t.fillStyle = "white"
+                        } else if (stringedLine != "" && stringedLinePrev == stringedLine) {
                             // handy feature to see if lines are same
                             t.fillStyle = "lime"
                         } else {
@@ -8538,16 +8897,23 @@ function renderInternal() {
         var commentLine = false
         // TODO: maybe pull some of this out of the loop
         // if (fx.fileMode != "terminal") {
-        if (extras) {
-            if (theLine.startsWith("+")) {
+        if (extras && (!syntaxHighlight || fx.fileMode != "file")) {
+            // the mini highlighting we do, not the full fledged highlighting
+            // theLine vs TrimmedLine
+            if (trimmedLine.startsWith("+")) {
                 textFillStyle = isDark ? "lime" : "green"
-            } else if (theLine.startsWith("-")){
+            } else if (trimmedLine.startsWith("-")){
                 textFillStyle = "orangered"
-            // } else if (trimmedLine.startsWith("// mar"+"ker ") || trimmedLine.startsWith("# mar"+"ker ")) {
             } else if (trimmedLine.startsWith("//") || trimmedLine.startsWith("#")) {
                 commentLine = true
                 // comments are gray
                 textFillStyle = lightFontColor
+            } else if (trimmedLine.startsWith("@")) {
+                textFillStyle = isDark ? "deepskyblue" : "blue"
+            } else if (trimmedLine.startsWith("%")) {
+                textFillStyle = isDark ? "yellow" : "saddlebrown"
+            } else if (trimmedLine.startsWith("*")) {
+                textFillStyle = isDark ? "thistle" : "violet"
             } else {
                 // feature to gray out lines before where you are scrolled to
                 // var spaceCount = getSpaceCount(theLine)
@@ -8605,10 +8971,15 @@ function renderInternal() {
         }
 
         theLine = theLine || ""
-        var expandedLine = expandLine(theLine, (theIndex))
+        var expandedLine = expandLine(theLine, theIndex)
         var syntaxColors
-        if (syntaxHighlight) {
-            syntaxColors = getSyntaxHighlight(expandedLine)
+        if (syntaxHighlight && fx.fileMode == "file") {
+        // if (syntaxHighlight) {
+            var prevExpandedLine = null
+            if (theIndex > 0) {
+                prevExpandedLine = expandLine(fx.lines[theIndex-1] || "", theIndex-1)
+            }
+            syntaxColors = getSyntaxHighlight(expandedLine, prevExpandedLine)
         }
 
         // one option is to draw the whole line in one go
@@ -8619,10 +8990,24 @@ function renderInternal() {
         }
         var extraY = 0
         for (var x=0; x < maxCols; x++) {
-            if ((x+fx.offsetX) >= expandedLine.length) {
+            let expLine = expandedLine
+            // if (syntaxHighlight && fx.fileMode == "file") {
+            //     expLine = expLine.concat((" " + expandedLine.endState).split(""))
+            // }
+            if (fx.fileErrors && fx.fileErrors[theIndex+1]) {
+                // not cached
+                var errorMessage = fx.fileErrors[theIndex+1].Message
+                expLine = expLine.concat((" " + errorMessage).split(""))
+            }
+            
+            if ((x+fx.offsetX) >= expLine.length) {
                 break
             }
-            var chr = expandedLine[x+fx.offsetX] || ""
+            if ((x+fx.offsetX) >= expandedLine.length) {
+                // fileError Color
+                textFillStyle = "rgba(255, 200, 200)"
+            }
+            var chr = expLine[x+fx.offsetX] || ""
             if (chr == "\t") {
                 if (shouldSeeTabs) {
                     t.fillStyle = veryLightFontColor
@@ -8631,6 +9016,27 @@ function renderInternal() {
             } else if (chr == "\r") {
                 t.fillStyle = "orangered"
                 t.fillText("•", x*fontWidth, y*fontHeight + fontOffsetY)
+
+
+            // } else if (chr == "\342") {
+            //     t.fillStyle = "skyblue"
+            //     t.fillText("•", x*fontWidth, y*fontHeight + fontOffsetY)
+            // } else if (chr == "\200") {
+            //     t.fillStyle = "white"
+            //     t.fillText("•", x*fontWidth, y*fontHeight + fontOffsetY)
+            // } else if (chr == "\203") {
+            //     t.fillStyle = "orange"
+            //     t.fillText("•", x*fontWidth, y*fontHeight + fontOffsetY)
+            } else if (chr == "\u2003") {
+                t.fillStyle = "teal"
+                t.fillText("•", x*fontWidth, y*fontHeight + fontOffsetY)
+            } else if (chr > "\xff") {
+                t.fillStyle = "deepskyblue"
+                t.fillText(chr, x*fontWidth, y*fontHeight + fontOffsetY)
+            } else if (chr > "\x7f") {
+                t.fillStyle = "lawngreen"
+                t.fillText(chr, x*fontWidth, y*fontHeight + fontOffsetY)
+
             } else if (chr != "" && chr != " ") {
                 // TODO: do we need to assign every time?
                 // red #color
@@ -8667,11 +9073,16 @@ function renderInternal() {
                         extraY = extraYEmoji
                         // chr = "?"
                     } else {
-                        t.font = fontCSS
+                        var charCode = chr.charCodeAt(0)
+                        // if (charCode >= 44 && charCode <= 46 || charCode == 95 || charCode >= 58 && charCode <= 62) {
+                        //     t.font = fontCSSPunctuation
+                        // } else {
+                            t.font = fontCSS
+                        // }
                         extraY = 0
                     }
-                    if (syntaxHighlight) {
-                        // t.fillStyle = syntaxColorMap[isDark-0][syntaxColors[x+fx.offsetX]]
+                    // if (syntaxHighlight) {
+                    if (syntaxHighlight && fx.fileMode == "file") {
                         let f = syntaxColorMap[isDark-0][syntaxColors[x+fx.offsetX]]
                         if (f) {
                             t.fillStyle = f
@@ -9103,6 +9514,9 @@ var keywords = {
     "class": true,
     "if": true,
     "else": true,
+    "elif": true,
+    "elsif": true,
+    "elseif": true,
     "for": true,
     "var": true,
     "break": true,
@@ -9116,6 +9530,11 @@ var keywords = {
     "new": true,
 
     "func": true,
+    "def": true,
+    "end": true,
+    "loop": true,
+    "local": true,
+    "each": true,
     "go": true,
     "range": true,
     "len": true,
@@ -9178,47 +9597,42 @@ var syntaxColorMap = [
         keyword2: "magenta",
         keyword3: "brown", 
         number: "coral",
+        diffAdd: "green",
+        diffSub: "orangered",
     },
     {
         // darkmode
-        // quote: "orangered",
-        // quote: "coral", // * last one
-        // quote: "lightsalmon",
-        // quote: "darksalmon",
-        // quote: "rosybrown",
-        // quote: "palevioletred",
-        // quote: "salmon",
-        quote: "white",
+        quote: "thistle",
         keyword: "deepskyblue",
-        // keyword: "skyblue",
-        symbol: "orange",
+        symbol: "tan",
         key: "cyan",
         comment: "rgba(255, 255, 255, 0.5)",
         dotword: "aquamarine",
-        // call: "lime",
-        // call: "lightgreen",
-        call: "limegreen",
-        // dollarword: "rgb(255, 100, 255)",
-        // dollarword: "magenta",
+        call: "lightgreen",
         dollarword: "khaki",
         uppercasefirst: "darkkhaki",
-        // uppercasefirst: "olive",
-        // uppercase: "yellow",
-        // uppercase: "chartreuse",
-        // uppercase: "cornflowerblue",
-        // uppercasefirst: "gold",
         uppercase: "lightskyblue",
-        // keyword2: "plum",
         keyword2: "lightpink",
         keyword3: "yellowgreen",
         number: "yellow",
     },
+    // {
+    //     // darkmode
+    //     quote: "lightgreen",
+    //     comment: "rgba(255, 255, 255, 0.5)",
+    //     diffAdd: "lime",
+    //     diffSub: "orangered",
+    // },
 ]
-function getSyntaxHighlight(expandedLine) {
+function getSyntaxHighlight(expandedLine, prevExpandedLine) {
     var quoties = "\"'`"
     var backslash = "\\"
     var state = "out"
     var quoteType = ""
+    if (prevExpandedLine && prevExpandedLine.endState) {
+        state = prevExpandedLine.endState
+        quoteType = prevExpandedLine.endQuoteType
+    }
     var syntaxColors = []
     var curWord = ""
     var quoteStart = -1
@@ -9243,12 +9657,21 @@ function getSyntaxHighlight(expandedLine) {
             } else if ("/".indexOf(chr) != -1) {
                 state = "inFirstForwardSlash"
                 syntaxColors.push("symbol")
+            } else if ("<".indexOf(chr) != -1) {
+                state = "inLessThan"
+                syntaxColors.push("symbol")
             } else if ("#".indexOf(chr) != -1) {
                 state = "inComment"
                 syntaxColors.push("comment")
             } else if ("*".indexOf(chr) != -1 && i == 5) {
                 state = "inComment"
                 syntaxColors.push("comment")
+            } else if ("+".indexOf(chr) != -1 && i == 0) {
+                state = "inDiffAdd"
+                syntaxColors.push("diffAdd")
+            } else if ("-".indexOf(chr) != -1 && i == 0) {
+                state = "inDiffSub"
+                syntaxColors.push("diffSub")
             } else {
                 state = "inSymbol"
                 syntaxColors.push("symbol")
@@ -9402,6 +9825,37 @@ function getSyntaxHighlight(expandedLine) {
                 state = "inComment"
                 syntaxColors[i-1] = "comment"
                 syntaxColors.push("comment")
+            } else if ("*".indexOf(chr) != -1) {
+                state = "inOtherComment"
+                syntaxColors[i-1] = "comment"
+                syntaxColors.push("comment")
+            } else {
+                state = "inSymbol"
+                i--
+            }
+        } else if (state == "inLessThan") {
+            if ("!".indexOf(chr) != -1) {
+                state = "maybeInHtmlComment1"
+                syntaxColors.push("symbol")
+            } else {
+                state = "inSymbol"
+                i--
+            }
+        } else if (state == "maybeInHtmlComment1") {
+            if ("-".indexOf(chr) != -1) {
+                state = "maybeInHtmlComment2"
+                syntaxColors.push("symbol")
+            } else {
+                state = "inSymbol"
+                i--
+            }
+        } else if (state == "maybeInHtmlComment2") {
+            if ("-".indexOf(chr) != -1) {
+                state = "inHtmlComment"
+                syntaxColors[i-1] = "comment" // -
+                syntaxColors[i-2] = "comment"// !
+                syntaxColors[i-3] = "comment" // <
+                syntaxColors.push("comment")
             } else {
                 state = "inSymbol"
                 i--
@@ -9418,6 +9872,39 @@ function getSyntaxHighlight(expandedLine) {
             }
         } else if (state == "inComment") {
             syntaxColors.push("comment")
+        } else if (state == "inOtherComment") {
+            if ("*".indexOf(chr) != -1) {
+                state = "maybeEndOtherComment"
+            }
+            syntaxColors.push("comment")
+        } else if (state == "maybeEndOtherComment") {
+            if ("/".indexOf(chr) != -1) {
+                state = "out"
+            }
+            syntaxColors.push("comment")
+        } else if (state == "inHtmlComment") {
+            if ("-".indexOf(chr) != -1) {
+                state = "maybeEndHtmlComment1"
+            }
+            syntaxColors.push("comment")
+        } else if (state == "maybeEndHtmlComment1") {
+            if ("-".indexOf(chr) != -1) {
+                state = "maybeEndHtmlComment2"
+            } else {
+                state = "inHtmlComment"
+            }
+            syntaxColors.push("comment")
+        } else if (state == "maybeEndHtmlComment2") {
+            if (">".indexOf(chr) != -1) {
+                state = "out"
+            } else {
+                state = "inHtmlComment"
+            }
+            syntaxColors.push("comment")
+        } else if (state == "inDiffAdd") {
+            syntaxColors.push("diffAdd")
+        } else if (state == "inDiffSub") {
+            syntaxColors.push("diffSub")
         } else if (state == "inQuote") {
             if (chr == backslash) {
                 state = "backslashInQuote"
@@ -9441,6 +9928,14 @@ function getSyntaxHighlight(expandedLine) {
         }
     }
     expandedLine.syntaxColors = syntaxColors
+    if (state == "inOtherComment" || state == "inHtmlComment" || state == "inQuote") {
+        expandedLine.endState = state
+        if (state == "inQuote") {
+            expandedLine.endQuoteType = quoteType
+        }
+    } else {
+        expandedLine.endState = ""
+    }
     return syntaxColors
 }
 
@@ -9715,12 +10210,14 @@ function onStart(e) {
         var changedY = false
         //var maxHeight = canvasHeight
         var maxHeight = (maxLines -1 ) * fontHeight
+
         // var minAllowedY = headers.length * fontHeight
-        
         var minAllowedY = minSpaceForHeader * fontHeight
-        
-        
+        if (fx.offsetY <= minSpaceForHeader) {
+            minAllowedY = 0
+        }
         // var minAllowedY = 0
+
         if (cursorY > maxHeight) {
             var extendY = cursorY - maxHeight
             cursorY = maxHeight
@@ -9744,9 +10241,13 @@ function onStart(e) {
             cursorY = minAllowedY
             fx.offsetY += Math.floor(extendY/fontHeight)
             changedY = true
-            if (fx.offsetY < -minSpaceForHeader) {
+            // if (fx.offsetY < -minSpaceForHeader) {
+            //     overflowY += fx.offsetY
+            //     fx.offsetY = -minSpaceForHeader
+            // }
+            if (fx.offsetY < 0) {
                 overflowY += fx.offsetY
-                fx.offsetY = -minSpaceForHeader
+                fx.offsetY = 0
             }
             if (overflowY < -50 && !hasDoneOverflowYAction && startCursorLineIndex == 0) {
                 if (fx.fileMode == "shell") {
@@ -9837,28 +10338,7 @@ function onStart(e) {
         if (cursorType == "select") {
             overflowX = 0
             overflowY = 0
-            var cli = fx.cursorLineIndex
-            if (cli >= fx.lines.length) {
-                cli = fx.lines.length - 1
-            }
-            var line = fx.lines[cli] || ""
-            if (selectedRegion.selectedWord) {
-                selectedRegion.selectedWord = false
-                // selectedRegion.stopX = selectedRegion.origStopX
-            }
-            if ("origStartX" in selectedRegion) {
-                selectedRegion.startX = selectedRegion.origStartX
-                selectMode = "char"
-            }
-            if (selectedRegion.selectedLine) {
-                selectedRegion.selectedLine = false
-            }
-            selectedRegion.stopX = bind(fx.cursorColIndex, 0, expandTabIndex(line, line.length))
-            selectedRegion.stopY = bind(cli, 0, fx.lines.length-1)
-            selectedRegion.stopped = true // TODO: I think stop can be removed
-            if (fx.cursorColIndex < 0 || selectMode == "line") {
-                selectedRegion.stopX = expandTabIndex(line, line.length, cli)
-            }
+            moveSelectionToCursor(selectedRegion)
         }
         // attempt at #snappingCursor
         // TODO: also look at snapping away whitespace
@@ -10164,28 +10644,9 @@ function onStart(e) {
                 if (false && highlightMatchesSingleRegExp) {
                     prevHighlightText()
                 // } else if (searchText.value !== "" && !fx.selectedRegions.length) {
-                } else if (!fx.selectedRegions.length || selectMode == "char") {
+                // } else if (!fx.selectedRegions.length || selectMode == "char") {
+                } else if (true) {
                     findUp()
-                } else {
-                    fx.cursorLineIndex -= 1
-                    if (fx.cursorLineIndex < 0) {
-                        fx.cursorLineIndex = 0
-                    }
-                    ensureCursorInScreen()
-                    if (fx.selectedRegions.length) {
-                        fx.selectedRegions[0].stopY -= 1
-                        if (fx.selectedRegions[0].stopY < fx.selectedRegions[0].startY) {
-                            fx.selectedRegions[0].stopY = fx.selectedRegions[0].startY
-                        }
-                        var theLine = fx.lines[fx.selectedRegions[0].stopY] || ""
-                        fx.selectedRegions[0].stopX = expandTabIndex(theLine, theLine.length, fx.selectedRegions[0].stopY)
-                    } else if (document.activeElement != theText) {
-                        // ??
-                        fx.offsetY -= 1
-                        if (fx.offsetY < 0) {
-                            fx.offsetY = -minSpaceForHeader
-                        }
-                    }
                 }
             },
             "3farRight": function () {
@@ -10194,28 +10655,9 @@ function onStart(e) {
                 // if (fx.highlightText) {
                 if (false && highlightMatchesSingleRegExp) {
                     nextHighlightText()
-                } else if (!fx.selectedRegions.length || selectMode == "char") {
+                // } else if (!fx.selectedRegions.length || selectMode == "char") {
+                } else if (true) {
                     findDown()
-                } else {
-                    fx.cursorLineIndex += 1
-                    if (fx.cursorLineIndex >= fx.lines.length) {
-                        fx.cursorLineIndex = fx.lines.length - 1
-                    }
-                    ensureCursorInScreen()
-                    if (fx.selectedRegions.length) {
-                        fx.selectedRegions[0].stopY += 1
-                        if (fx.selectedRegions[0].stopY > fx.lines.length - 1) { // stopY is inclusive I think, stopX isn't
-                            fx.selectedRegions[0].stopY = fx.lines.length - 1
-                        }
-                        var theLine = fx.lines[fx.selectedRegions[0].stopY] || ""
-                        fx.selectedRegions[0].stopX = expandTabIndex(theLine, theLine.length, fx.selectedRegions[0].stopY)
-                    } else if (document.activeElement != theText) {
-                        // ??
-                        fx.offsetY += 1
-                        if (fx.offsetY > fx.lines.length - 10) {
-                            fx.offsetY = lines.length - 10
-                        }
-                    }
                 }
             },
             "2farLeft": navFileLeft,
@@ -11359,6 +11801,7 @@ function makeFile(fullPath, cursorLineIndex, contents) {
             lastSavedLines: JSON.parse(JSON.stringify(theLines)),
             lastSavedHash: md5(contents),
         },
+        fileErrors: {},
         lines: theLines,
         cursorLineIndex: cursorLineIndex,
         // cursorColIndex: 0,
@@ -11369,7 +11812,8 @@ function makeFile(fullPath, cursorLineIndex, contents) {
         cursorColIndex: -calcMarginLeft(theLines.length),
         // offsetY: cursorLineIndex, // you could get smarter about this
         // offsetY: max(cursorLineIndex - Math.floor(maxLines/2), 0), // you can still clean this up a bit, not sure if maxLines is ready?
-        offsetY: -minSpaceForHeader,
+        // offsetY: -minSpaceForHeader,
+        offsetY: 0,
         offsetX: 0,
         fileMode: "file",
         shellCWD: "",
@@ -11517,6 +11961,7 @@ function addFile(fullPath, options, id, name) { // hotpink marker
                 // see also setLines
                 files[i].lines = file.lines
                 files[i].undo = file.undo
+                files[i].fileErrors = file.fileErrors
                 files[i].marginLeft = file.marginLeft
                 if (files[i].cursorColIndex < 0) {
                     files[i].cursorColIndex = -file.marginLeft
@@ -11952,8 +12397,10 @@ function duplicateFile(f, cursorLineIndex, options, id="") {
     }
     var oldLines = f.lines
     var oldUndo = f.undo
+    var oldFileErrors = f.fileErrors
     delete f.lines
     delete f.undo
+    delete f.fileErrors
     
     var fc = JSON.parse(JSON.stringify(f))
     fc.fileToken = fileToken
@@ -11963,9 +12410,11 @@ function duplicateFile(f, cursorLineIndex, options, id="") {
     
     f.lines = oldLines
     f.undo = oldUndo
+    f.fileErrors = oldFileErrors
     // copy everything but reference lines and undo
     fc.lines = f.lines
     fc.undo = f.undo
+    fc.fileErrors = f.fileErrors
     
 
     if (id == "") {
@@ -12048,6 +12497,7 @@ function fetchFile(fullPath, file, id="") {
             lastSavedLines: JSON.parse(JSON.stringify(file.lines)),
             lastSavedHash: md5(b),
         }
+        file.fileErrors = {}
         file.loadedFirstTime = true
         if (isDir) {
             file.fileMode = "directory"
@@ -12092,6 +12542,7 @@ function reloadFile(theFile) {
                 files[i].lines = theFile.lines
                 files[i].marginLeft = theFile.marginLeft
                 files[i].undo = theFile.undo
+                files[i].fileErrors = theFile.fileErrors
                 if (files[i].cursorColIndex < 0) {
                     files[i].cursorColIndex = -theFile.marginLeft
                     ensureCursorInScreen(files[i])
@@ -12112,8 +12563,12 @@ function reloadFile(theFile) {
 }
 
 var inDebugView = false
-function debugView() {
+function toggleDebugView() {
     inDebugView = !inDebugView
+    renderDebugView()
+}
+
+function renderDebugView() {
     if (inDebugView) {
        statusEl.classList.remove("hidden")
        logEl.classList.remove("hidden")
@@ -12208,6 +12663,9 @@ function fetchWorkspaceWithList(index) {
         }
         if (workspace.DarkMode != isDark) {
             toggleDarkMode()
+        }
+        if (!!workspace.InDebugView != !!inDebugView) {
+            toggleDebugView()
         }
         if (workspace.HighlightMatches) {
             highlightMatches = workspace.HighlightMatches
@@ -12693,8 +13151,10 @@ function duplicateSelection() {
     // copy(true)
     ghostSelectionComment = fx.selectedRegions[0]
     // so the duplicate, comment flow also works
+    var oldCopyBuffer = copyBuffer
     copy()
     paste()
+    copyBuffer = oldCopyBuffer
 }
 function moveSelectionUp() {
     fx.cursorLineIndex -= 1
@@ -12753,6 +13213,17 @@ var navFileLeft = function() {
     } else {
         fileIndex = 0
     }
+    if (fileIndex >= 0) {
+        // reusing moveHomeEndTimeout
+        moveHomeEndTimeout = setTimeout(function() {
+            fileIndex = fileIndex + 1
+            setCurrentFile(files[fileIndex])
+            moveFileAllTheWayLeft()
+            saveWorkspace()
+            // overflowX = 0
+        }, moveHomeEndTimeoutMillis)
+    }
+    
     if (fileIndex == -1) {
         seeFiles()
     } else {
@@ -12995,8 +13466,22 @@ function handleTouchAreasXOnly(e, mapping) {
 // yay
 function touchAreasPressWhileSelected(e, state) {
     handleTouchAreas(e, {
+        "5middle": function () {
+            doTogglePin()
+        },
+        "4right": function () {
+            scriptLines()
+        },
         "3middle": function() {
-            openEditorCommandText()
+            editSearch()
+            // openEditorCommandText()
+        },
+        "3midLeft": function () {
+            clearSearch()
+            return
+        },
+        "3midRight": function () {
+            clearSearch()
         },
         "2left": function() {
             if (selectMode == "line") {
@@ -13015,9 +13500,13 @@ function touchAreasPressWhileSelected(e, state) {
         },
         "3left": function() {
             // dedent()
+            clearSearch()
+            findUp()
         },
         "3right": function() {
             // indent()
+            clearSearch()
+            findDown()
         },
         "1left": function () {
             del()
@@ -13025,8 +13514,10 @@ function touchAreasPressWhileSelected(e, state) {
         "1midLeft": function () {
             preventRender = true
             del()
-            // paste(true, false, true) // unselect, pastebefore, smartPaste
-            paste(true, true, true) // unselect, pastebefore, smartPaste
+            paste(true, false, true) // unselect, pastebefore, smartPaste
+            // paste(true, true, true) // unselect, pastebefore, smartPaste
+            fx.cursorLineIndex++
+            updateCursorXY()
             preventRender = false
             render()
         },
@@ -13040,7 +13531,9 @@ function touchAreasPressWhileSelected(e, state) {
     })
 }
 
-
+function fileSpot() {
+    return fx.fullPath + ":" + (fx.cursorLineIndex + 1) + ":" + (u(fx.cursorColIndex) + 1)
+}
 function touchAreasLongPress(e, state) {
     handleTouchAreas(e, {
         "5middle": function () {
@@ -13056,6 +13549,14 @@ function touchAreasLongPress(e, state) {
             document.body.removeEventListener("touchmove", state.onMove)
             moveListenerCount -= 1
             document.body.addEventListener("touchend", doFocus)
+        },
+        "3right": async function() {
+            var r = await fetch(proxyPath + "/gotodef?fileSpot=" + encodeURIComponent(fileSpot()), {cache: "no-cache"})
+            var j = await r.json()
+            if (j.output[0] == "/") {
+                let parts = j.output.split(":")
+                addFile()
+            }
         },
         "2left": function () {
             // deleteToBeginningOfLine()
@@ -14014,6 +14515,37 @@ function deleteToEndOfLine() {
         render()
     })
 }
+
+
+function moveSelectionToCursor() {
+    
+    var cli = fx.cursorLineIndex
+    if (cli >= fx.lines.length) {
+        cli = fx.lines.length - 1
+    }
+    var line = fx.lines[cli] || ""
+    if (selectedRegion.selectedWord) {
+        selectedRegion.selectedWord = false
+        // selectedRegion.stopX = selectedRegion.origStopX
+    }
+    if ("origStartX" in selectedRegion) {
+        selectedRegion.startX = selectedRegion.origStartX
+        selectMode = "char"
+    }
+    if (selectedRegion.selectedLine) {
+        selectedRegion.selectedLine = false
+    }
+    selectedRegion.stopX = bind(fx.cursorColIndex, 0, expandTabIndex(line, line.length))
+    selectedRegion.stopY = bind(cli, 0, fx.lines.length-1)
+    selectedRegion.stopped = true // TODO: I think stop can be removed
+    if (fx.cursorColIndex < 0 || selectMode == "line") {
+        selectedRegion.stopX = expandTabIndex(line, line.length, cli)
+    }
+}
+
+
+
+
 </script>
 <video playsinline id=videoEl style="position: absolute; top: 0; right: 0; display: none; width: 80px; height: 130px; background-color: pink; transform: scaleX(-1); border-radius: 10px;"><video>
 <audio id="audio" controls></audio>

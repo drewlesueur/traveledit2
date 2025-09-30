@@ -13680,7 +13680,26 @@ function touchAreasPress(e, state) {
         },
         "4middle": function () {
             // openVoiceCommandText()
-            addSpace()
+            // addSpace()
+
+            // add date
+            var oldCopyBuffer = copyBuffer
+            var d = new Date()
+            copyBuffer = [
+                d.getFullYear() +
+                '-' +
+                String(d.getMonth() + 1).padStart(2, '0') +
+                '-' +
+                String(d.getDate()).padStart(2, '0') +
+                ' ' +
+                String(d.getHours()).padStart(2, '0') +
+                ':' +
+                String(d.getMinutes()).padStart(2, '0') +
+                ':' +
+                String(d.getSeconds()).padStart(2, '0')
+            ]
+            paste(true, false, true)
+            copyBuffer = oldCopyBuffer
         },
         "4midRight": function () {
         },
