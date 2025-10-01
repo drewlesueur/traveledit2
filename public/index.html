@@ -1681,7 +1681,11 @@ function doSizing() {
         // canvasHeightFull=1820 //+ (oneRow*2)
         // canvasHeightFull=1820 + (oneRow*1)
         canvasHeightFull=1820 + (oneRow*1)
-        canvasHeightKeyboard=1154 
+
+        // canvasHeightKeyboard=1154
+        // iOS 26 gives less space with keyboard so I shrunk it
+        canvasHeightKeyboard=1116
+
         // navTouchSize = 50
         // navTouchSize = 40
         // navTouchSize = 30
