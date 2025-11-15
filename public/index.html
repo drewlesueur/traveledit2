@@ -387,8 +387,8 @@ They get changed later on.
     
     <div class=middleButton onclick=reloadFile(fx)>reload</div>
     <div class=middleButton onclick=goUpDirectory()>⬆️</div>
-    <div class=middleButton id="gptButton" onclick="runChatGPT('gpt-5')">gpt-5</div>
-    <div class=middleButton onclick="runChatGPT('gpt-5', {extra: onlyCode})">gpt-5 code</div>
+    <div class=middleButton id="gptButton" onclick="runChatGPT('gpt-5.1')">gpt-5.1</div>
+    <div class=middleButton onclick="runChatGPT('gpt-5.1', {extra: onlyCode})">gpt-5.1 code</div>
     <div id=saveButton class=middleButton onclick=saveWrapper()>save</div>
     <div class=middleButton onclick="runScript()" id=statusBar>run script</div>
     <div class=middleButton onclick="runChatGPT('gpt-4.1')">4.1</div>
@@ -503,6 +503,7 @@ They get changed later on.
     <div class=longButton onclick="selectFont('RightSerifMono')">Right Serif Mono</div>
     <div class=longButton onclick="selectFont('RightSerifMonoFine')">Right Serif Mono Fine</div>
     <div class=longButton onclick="selectFont('RightSerifMonoDark')">Right Serif Mono Dark</div>
+    <div class=longButton onclick="selectFont('Libertinus')">Libertinus</div>
     <div class=longButton onclick="selectFont('RedditMono')">Reddit Mono</div>
     <div class=longButton onclick="selectFont('InputMono')">Input Mono</div>
     <div class=longButton onclick="selectFont('SFMono')">SF Mono</div>
@@ -1056,6 +1057,13 @@ var fonts = {
         fontSize: 30,
         fontName: "GoogleSansCode",
         url: "https://fonts.gstatic.com/s/googlesanscode/v11/pxiSyogzv91QhV44Z_GQBHsGf5PuckJMXr41HfVaiXFhgjF58LS-h3BytSU.woff2"
+    },
+    "Libertinus": {
+        fontHeightPre: 38,
+        fontWidthPre: 18,
+        fontSize: 30,
+        fontName: "Libertinus",
+        url: "https://fonts.gstatic.com/s/libertinusmono/v1/_gPg1RnxrjY_TDm97ApTqwneJJFjpxt2QxCG_g.woff2"
     },
     "InputMono": {
         fontHeightPre: 38,
