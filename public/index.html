@@ -498,6 +498,11 @@ They get changed later on.
 <div class=toolbar>
     <div class=longButton onclick="selectFont('Menlo')">Menlo</div>
     <div class=longButton onclick="selectFont('GoogleSansCode')">Google</div>
+    <div class=longButton onclick="selectFont('XanhMono')">Xanh</div>
+    <div class=longButton onclick="selectFont('BradfordMono')">BradfordMono</div>
+    <div class=longButton onclick="selectFont('RightSerifMono')">Right Serif Mono</div>
+    <div class=longButton onclick="selectFont('RightSerifMonoFine')">Right Serif Mono Fine</div>
+    <div class=longButton onclick="selectFont('RightSerifMonoDark')">Right Serif Mono Dark</div>
     <div class=longButton onclick="selectFont('Libertinus')">Libertinus</div>
     <div class=longButton onclick="selectFont('Fixedsys')">Fixedsys</div>
     <div class=longButton onclick="selectFont('KelmscottMono')">Kelmscott Mono</div>
@@ -871,6 +876,38 @@ var onlyCode = '\nOnly give me code, no explanation, no markdown wrapper. Just t
 // https://abcdinamo.com/typefaces/monument-grotesk
 // sohne mono
 var fonts = {
+    "BradfordMono": {
+        fontHeightPre: 38,
+        fontWidthPre: 17.5,
+        fontSize: 30,
+        fontName: "BradfordMono",
+        // fontOffsetYPre: 3,
+        url: proxyPath + "/tepublic/BradfordMono/BradfordMonoLLTrialWeb-Regular.woff2"
+    },
+    "RightSerifMono": {
+        fontHeightPre: 38,
+        fontWidthPre: 17.5,
+        fontSize: 30,
+        fontName: "RightSerifMono",
+        // fontOffsetYPre: 3,
+        url: proxyPath + "/tepublic/RightSerifMono/PPRightSerifMono-Regular.otf"
+    },
+    "RightSerifMonoFine": {
+        fontHeightPre: 38,
+        fontWidthPre: 17.5,
+        fontSize: 30,
+        fontName: "RightSerifMonoFine",
+        // fontOffsetYPre: 3,
+        url: proxyPath + "/tepublic/RightSerifMono/PPRightSerifMono-Fine.otf"
+    },
+    "RightSerifMonoDark": {
+        fontHeightPre: 38,
+        fontWidthPre: 17.5,
+        fontSize: 30,
+        fontName: "RightSerifMonoDark",
+        // fontOffsetYPre: 3,
+        url: proxyPath + "/tepublic/RightSerifMono/PPRightSerifMono-Dark.otf"
+    },
     "BerkeleyMono": {
         fontHeightPre: 38,
         fontWidthPre: 17.5,
@@ -2391,7 +2428,9 @@ function setFontVars() {
     fontCSSTiny = (currentFont.fontSize * fontScale/2) + "px '"+currentFont.fontName+"', monospace"
     fontCSSEmoji = (currentFont.fontSize * fontScale * .6 * emojiWidth) + "px '"+currentFont.fontName+"', ui-monospace, monospace"
 
-    fontCSSPunctuation = (currentFont.fontSize * fontScale) + "px Menlo, monospace"
+    // fontCSSPunctuation = (currentFont.fontSize * fontScale) + "px Menlo, monospace"
+    // fontCSSPunctuation = (currentFont.fontSize * fontScale) + "px 'Courier New', monospace"
+    fontCSSPunctuation = (currentFont.fontSize * fontScale) + "px GoogleSansCode, monospace"
     
     // extraYEmoji = (currentFont.fontSize * fontScale * .6) / 2 / emojiWidth
     extraYEmoji = 0
@@ -9103,10 +9142,12 @@ function renderInternal() {
                     } else {
                         var charCode = chr.charCodeAt(0)
                         // if (charCode >= 44 && charCode <= 46 || charCode == 95 || charCode >= 58 && charCode <= 62) {
-                        //     t.font = fontCSSPunctuation
-                        // } else {
+                        // if (!(charCode >= 97 && charCode <= 122 || charCode >= 48 && charCode <= 57 || charCode >= 65 && charCode <= 90)) {
+                        if (false) {
+                            t.font = fontCSSPunctuation
+                        } else {
                             t.font = fontCSS
-                        // }
+                        }
                         extraY = 0
                     }
                     // if (syntaxHighlight) {
