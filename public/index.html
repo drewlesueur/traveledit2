@@ -21,6 +21,7 @@ left slice  repurposed for copy?!
 <html>
 <head>
 <script>
+var travelEdit = true
 var proxyPath = ""
 // PROXYPATH GOES HERE
 
@@ -4745,8 +4746,33 @@ function getSelectedLines(f, shouldDeleteSelected, shouldUnselect) {
     } else {
         // if nothing is selected, let's deal with all the lines
         // note that we don't yet support shouldDeleteSelected here.
-        copyBuffer = fx.lines.slice() // slice here acts as a copy. Do we need a copy? doing it to be safe
-        isWholeFile = true
+        
+        // let's first see if there are defined regions
+        var maxCheck = 10000
+        otherCheck: {
+            outer: for (var i = 0; i < maxCheck; i++) {
+                var line = fx.lines[fx.cursorLineIndex - i]
+                if (!line) {
+                    break
+                }
+                if (line.indexOf("selection region start") != -1) {
+                    var startI = fx.cursorLineIndex - i + 1
+                    for (var i = 0; i < maxCheck; i++) {
+                        if (!line) {
+                            break outer
+                        }
+                        var line = fx.lines[fx.cursorLineIndex + i]
+                        if (line.indexOf("selection region end") != -1) {
+                            var endI = fx.cursorLineIndex + i
+                            copyBuffer = fx.lines.slice(startI, endI)
+                            break otherCheck
+                        }
+                    }
+                }
+            }
+            copyBuffer = fx.lines.slice() // slice here acts as a copy. Do we need a copy? doing it to be safe
+            isWholeFile = true
+        }
     }
     theLines = copyBuffer
 
