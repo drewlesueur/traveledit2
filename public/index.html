@@ -1721,7 +1721,6 @@ function doSizing() {
             navTouchSize = 100
         }
     }
-    
     if (screen.width == 768 && screen.height == 1024) {
         device = "someipad"
         var oneRow = 36*3
@@ -1747,6 +1746,26 @@ function doSizing() {
         // canvasHeightKeyboard=1154
         // iOS 26 gives less space with keyboard so I shrunk it
         canvasHeightKeyboard=1116
+
+        // navTouchSize = 50
+        // navTouchSize = 40
+        // navTouchSize = 30
+        navTouchSize = 35
+        if (innerWidth > innerHeight) {
+            canvasHeightFull = 900
+            canvasHeightKeyboard = 300
+            navTouchSize = 100
+        }
+    }
+    // This condition for the 2025 iPhone Air
+    if (screen.width == 420 && screen.height == 912) {
+        device = "iphoneair"
+        var oneRow = 36*3
+        canvasHeightFull=2000 + (oneRow*1)
+
+        // canvasHeightKeyboard=1154
+        // iOS 26 gives less space with keyboard so I shrunk it
+        canvasHeightKeyboard=1240
 
         // navTouchSize = 50
         // navTouchSize = 40
