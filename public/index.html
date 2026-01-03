@@ -498,6 +498,9 @@ They get changed later on.
 
 <div class=toolbar>
     <div class=longButton onclick="selectFont('Menlo')">Menlo</div>
+    <div class=longButton onclick="selectFont('RedditMono')">Reddit Mono</div>
+    <div class=longButton onclick="selectFont('InputMonoLucida')">Input Mono L</div>
+    <div class=longButton onclick="selectFont('LucidaConsole')">Lucida Console</div>
     <div class=longButton onclick="selectFont('GoogleSansCode')">Google</div>
     <div class=longButton onclick="selectFont('XanhMono')">Xanh</div>
     <div class=longButton onclick="selectFont('BradfordMono')">BradfordMono</div>
@@ -507,7 +510,6 @@ They get changed later on.
     <div class=longButton onclick="selectFont('Libertinus')">Libertinus</div>
     <div class=longButton onclick="selectFont('Fixedsys')">Fixedsys</div>
     <div class=longButton onclick="selectFont('KelmscottMono')">Kelmscott Mono</div>
-    <div class=longButton onclick="selectFont('RedditMono')">Reddit Mono</div>
     <div class=longButton onclick="selectFont('InputMono')">Input Mono</div>
     <div class=longButton onclick="selectFont('SFMono')">SF Mono</div>
     <div class=longButton onclick="selectFont('CommitMono')">Commit Mono</div>
@@ -556,7 +558,6 @@ They get changed later on.
     <div class=longButton onclick="selectFont('VictorMonoMedium')">Victor Mono M</div>
     <div class=longButton onclick="selectFont('VictorMonoSemiBold')">Victor Semi Bold</div>
     <div class=longButton onclick="selectFont('SourceCodePro')">Source Code Pro</div>
-    <div class=longButton onclick="selectFont('InputMonoLucida')">Input Mono L</div>
     <div class=longButton onclick="selectFont('IosevkaLucida')">Iosevka L</div>
     <div class=longButton onclick="selectFont('IosevkaLucidaMedium')">Iosevka L Medium</div>
     <div class=longButton onclick="selectFont('IosevkaLucidaSemiBold')">Iosevka L SemiBold</div>
@@ -877,6 +878,20 @@ var onlyCode = '\nOnly give me code, no explanation, no markdown wrapper. Just t
 // https://abcdinamo.com/typefaces/monument-grotesk
 // sohne mono
 var fonts = {
+    "LucidaConsole": {
+        fontHeightPre: 38,
+        fontWidthPre: 18.5,
+        fontSize: 30,
+        fontName: "LucidaConsole",
+        url: proxyPath + "/tepublic/lucon.ttf"
+    },
+    "InputMonoLucida": {
+        fontHeightPre: 38,
+        fontWidthPre: 18.5,
+        fontSize: 30,
+        fontName: "InputMonoLucida",
+        url: proxyPath + "/tepublic/input_mono.ttf"
+    },
     "BradfordMono": {
         fontHeightPre: 38,
         fontWidthPre: 17.5,
@@ -1179,13 +1194,13 @@ var fonts = {
         fontName: "GeistMono",
         url: "https://fonts.gstatic.com/s/geistmono/v1/or3nQ6H-1_WfwkMZI_qYFrcdmhHkjko.woff2"
     },
-    "InputMonoLucida": {
-        fontHeightPre: 38,
-        fontWidthPre: 18,
-        fontSize: 30,
-        fontName: "InputMonoLucida",
-        url: proxyPath + "/tepublic/input_mono/input_mono_lucida.ttf"
-    },
+    // "InputMonoLucida": {
+    //     fontHeightPre: 38,
+    //     fontWidthPre: 18,
+    //     fontSize: 30,
+    //     fontName: "InputMonoLucida",
+    //     url: proxyPath + "/tepublic/input_mono/input_mono_lucida.ttf"
+    // },
     "VictorMono": {
         fontHeightPre: 38,
         fontWidthPre: 18,
