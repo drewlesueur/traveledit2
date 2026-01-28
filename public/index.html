@@ -2447,8 +2447,7 @@ function backspace() {
         return
     }
     var line = fx.lines[fx.cursorLineIndex]
-    if (fx.cursorColIndex == 0) {
-
+    if (fx.cursorColIndex <= 0) {
         return
     }
     // fx.lines[fx.cursorLineIndex] = line.slice(0, u(fx.cursorColIndex) - 1) + line.slice(u(fx.cursorColIndex))
