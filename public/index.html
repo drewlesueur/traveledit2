@@ -4890,11 +4890,91 @@ function getSelectedLines(f, shouldDeleteSelected, shouldUnselect) {
         isWholeFile: isWholeFile,
     }
 }
+
+// function formatXml(xml) {
+//   const PADDING = '  ';
+//   const reg = /(>)(<)(\/*)/g;
+//   let formatted = '';
+//   let pad = 0;
+// 
+//   xml = xml.replace(/\r\n/g, '\n').replace(/\n/g, '');
+//   xml = xml.replace(reg, '$1\n$2$3');
+// 
+//   xml.split('\n').forEach((node) => {
+//     if (!node.trim()) return;
+// 
+//     let indent = 0;
+//     if (node.match(/^<\/\w/)) {
+//       pad = Math.max(pad - 1, 0);
+//     } else if (node.match(/^<\w([^>]*[^/])?>.*$/) && !node.includes('</')) {
+//       indent = 1;
+//     }
+// 
+//     formatted += PADDING.repeat(pad) + node.trim() + '\n';
+//     pad += indent;
+//   });
+// 
+//   return formatted.trim();
+// }
+// 
+// Make this better
+
+function formatXml(xml) {
+  const PADDING = '  ';
+  const reg = /(>)(<)(\/*)/g;
+
+  let formatted = '';
+  let pad = 0;
+
+  if (typeof xml !== 'string') {
+    return '';
+  }
+
+  xml = xml
+    .replace(/\r\n/g, '\n')
+    .replace(/>\s+</g, '><')
+    .replace(reg, '$1\n$2$3')
+    .trim();
+
+  const lines = xml.split('\n');
+
+  for (let line of lines) {
+    const node = line.trim();
+    if (!node) continue;
+
+    const isClosingTag = /^<\/[\w:-]+/.test(node);
+    const isSelfClosingTag = /<[\w:-]+(\s[^>]*)?\/>/.test(node);
+    const isOpeningTag = /^<[\w:-]+(\s[^>]*)?>/.test(node) && !isSelfClosingTag && !isClosingTag;
+    const isComment = /^<!--/.test(node) && /-->$/.test(node);
+    const isDeclaration = /^<\?/.test(node) || /^<!DOCTYPE/.test(node);
+
+    if (isClosingTag && pad > 0) {
+      pad -= 1;
+    }
+
+    const indent = PADDING.repeat(pad);
+    formatted += indent + node + '\n';
+
+    if (!isClosingTag && !isSelfClosingTag && !isComment && !isDeclaration && isOpeningTag) {
+      pad += 1;
+    }
+  }
+
+  return formatted.trim();
+}
+
 function prettyJsonSelected() {
     var _t = getSelectedLines(fx, true)
     var linesToProcess = _t.lines
     var isWholeFile = _t.isWholeFile
-    var prettied = JSON.stringify(JSON.parse(linesToProcess.join("\n")), null, "    ").split("\n")
+    
+    
+    var code = linesToProcess.join("\n")
+    if (code.trim().charAt(0) == "<") {
+        var prettied = formatXml(code).split("\n")
+    } else {
+        var prettied = JSON.stringify(JSON.parse(code), null, "    ").split("\n")
+    }
     if (isWholeFile) {
         setLines(prettied)
         docChanged()
