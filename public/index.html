@@ -14642,6 +14642,7 @@ function selectBlock() {
             ensureCursorInScreen()
         }
     } else {
+        // TODO: Optimize
         let nextIndent = getIndent(fx.lines[fx.cursorLineIndex + 1])
         if (nextIndent.length > curIndent.length) {
             for (let i=fx.cursorLineIndex+1; i < fx.lines.length; i++) {
@@ -14658,21 +14659,14 @@ function selectBlock() {
                     break
                 }
             }
-            // for (let i=fx.cursorLineIndex-1; i >= 0; i--) {
-            //     let thisIndent = getIndent(fx.lines[i])
-            //     if (thisIndent < curIndent) {
-            //         break
-            //     }
-            //     sr.startY--
-            // }
         } else {
+            var indented = false
             var startI = fx.cursorLineIndex+1
             var hasGottenNonBlankLine = false
             for (let i=startI; i < fx.lines.length; i++) {
                 if (fx.lines[i].trim() == "") {
-                    // continue
-    
-                    if (hasGottenNonBlankLine) {
+                    // if (hasGottenNonBlankLine) {
+                    if (!indented) {
                         break
                     } else {
                         continue
@@ -14682,12 +14676,17 @@ function selectBlock() {
                 let thisIndent = getIndent(fx.lines[i])
                 if (thisIndent.length < curIndent.length) {
                     break
+                } else if (thisIndent.length > curIndent.length) {
+                    indented = true
                 }
                 sr.stopY = i
                 sr.stopX = expandTabIndex(fx.lines[i], fx.lines[i].length, i)
                 fx.cursorLineIndex = sr.stopY
                 updateCursorXY()
                 ensureCursorInScreen()
+                if (indented && thisIndent.length <= curIndent.length) {
+                    break
+                }
             }
         }
     }
