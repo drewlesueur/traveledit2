@@ -13829,7 +13829,23 @@ function touchAreasLongPress(e, state) {
             moveListenerCount -= 1
             document.body.addEventListener("touchend", doFocus)
         },
+        "3left": async function() {
+            if (searchText.value != getWordAtCursor().word) {
+                clearSearch()
+            }
+            findUp()
+            searchText.value = "\\b" + searchText.value + "\\b"
+            render()
+            return
+        },
         "3right": async function() {
+            if (searchText.value != getWordAtCursor().word) {
+                clearSearch()
+            }
+            findDown()
+            searchText.value = "\\b" + searchText.value + "\\b"
+            render()
+            return
             var r = await fetch(proxyPath + "/gotodef?fileSpot=" + encodeURIComponent(fileSpot()), {cache: "no-cache"})
             var j = await r.json()
             if (j.output[0] == "/") {
