@@ -7709,6 +7709,8 @@ var keyMaping = {
     "ArrowRight": "\x1b[C",
 }
 function handleKeydown(e) {
+    if (e.key == "Escape" && fx.textControls?.isOpen) { fx.textControls.closeAll({ focus: true }); e.preventDefault(); return }
+    if (e.key == "Enter" && !e.shiftKey && !e.isComposing && e.keyCode != 229 && fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) { e.preventDefault(); return }
     if (window.devTracker?.keyDown?.(e)) return
     // TODO: this is where you could wrap or unwrap quotes, etc
     if (fx.fileMode == "terminal") {
@@ -13347,6 +13349,7 @@ function toSnakeCase(str) {
 
 // not sure this feature is a good idea
 function checkButtonAction() {
+    if (fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) return true
     var w = getWordAtCursor(isHashTag)
     if (w.word in buttonActions) {
         buttonActions[w.word]()
@@ -14196,6 +14199,7 @@ function touchAreasPress(e, state) {
 }
 
 function middleTouchHandling() {
+    if (fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) return
     // now only bottom middle
     if (fx.fileMode == "directory") {
         // #filestuff

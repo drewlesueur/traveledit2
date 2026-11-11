@@ -65,29 +65,30 @@ The legacy executable's existing example names currently require `go test -vet=o
 ## Reusable text controls
 
 Both the standalone editor and embedded editor load `public/text-controls.js`.
-`window.TravelEditUI` provides task-independent buttons, control bars, and nested
-popup menus. It does not call a model API or depend on the DevTracker adapter.
+`TravelEditUI.createControls()` renders buttons, radio choices, and nested popups
+as ordinary fixed-width text with Unicode borders and shadows. It creates no DOM
+controls and knows nothing about DevTracker or model APIs.
 
 ```js
-const trigger = TravelEditUI.button('[ Tools ▾ ]', null, { trigger: true });
-document.body.append(trigger);
-const menu = TravelEditUI.createMenu(trigger);
-trigger.onclick = () => {
-    if (menu.isOpen) return menu.closeAll();
-    const tools = menu.open('Tools');
-    const options = tools.button('Display ›', () => {
-        const display = menu.open('Display', { parent: tools, anchor: options });
-        display.radioGroup('Density', ['compact', 'comfortable'], 'compact', value => {
-            document.body.dataset.density = value;
-        });
-        display.button('[ Done ]', () => menu.closeAll(), { separator: true });
-    }, { hasPopup: true });
-};
-// When removing this UI: menu.destroy(); trigger.remove();
+const controls = TravelEditUI.createControls({ onChange: redraw });
+controls.setContent([controls.button('[ Tools > ]', () => {
+    const tools = controls.open('Tools');
+    tools.radioGroup('Density', ['compact', 'comfortable'], 'compact', value => {
+        density = value;
+    });
+    tools.button('[ Done ]', () => controls.closeAll({ focus: true }));
+    controls.refresh({ focus: true });
+})]);
+file.textControls = controls;
+// In redraw(), append these immutable rows after your editable content:
+const result = controls.render({ startRow, width, viewportStart, viewportRows });
+// Append result.lines to file.lines. Keep them outside the editable range.
 ```
 
-A popup also provides `note(text, {role})`, `setDisabled(boolean)`, `reposition()`,
-and `close()`. Menus handle outside clicks, Escape, focus restoration, viewport
-changes, and disposal of their listeners and resize observers. Presentation can
-be customized with `--teui-font`, `--teui-background`, `--teui-color`, and
-`--teui-shadow`. Run `node test-text-controls.js` for the shared component checks.
+The native middle-region tap and Enter activate `file.textControls` at the current
+cursor row and column. A popup can open another popup with `{ parent: tools }`;
+`close()` returns to its parent. `capture()` and `locate()` preserve a control
+cursor when surrounding text moves. Hosts own redraws, editable boundaries, and
+focus/scroll policy; `focusTarget` identifies the first active choice.
+`note(text)`, `setDisabled(boolean)`, and `destroy()` cover status, pending actions,
+and disposal. Run `node test-text-controls.js` for component checks.
