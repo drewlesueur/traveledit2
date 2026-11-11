@@ -2137,6 +2137,16 @@ function addIframe(url, id, name, cwd) {
             iframe.style.height = "100%"
             iframeWrapper.style.overflow = "hidden"
             f.fullPath = iframe.src
+            if (!f.surfaceNavigation) {
+                f.surfaceNavigation = ["left", "right"].map(side => {
+                    const edge = document.createElement("div")
+                    edge.dataset.surfaceNavigation = side
+                    edge.style.cssText = "position:absolute;z-index:2;touch-action:none;"
+                    edge.addEventListener("touchstart", onStart, {passive: false})
+                    iframeWrapper.appendChild(edge)
+                    return edge
+                })
+            }
             setCanvasHeightAccordingly()
             f.surface.activate(fx === f)
             if (f.ID && files.includes(f)) saveWorkspace()
@@ -5387,6 +5397,21 @@ $b is $a and $c === $d
 number is -34.2 and 400.123 === forever young
 */
 
+
+// Keep native level-2 tab navigation above full-height remote surfaces.
+function positionSurfaceNavigation(file) {
+    if (!file?.surfaceNavigation) return
+    const [left, right] = file.surfaceNavigation
+    const width = c.getBoundingClientRect().width
+    for (const edge of file.surfaceNavigation) {
+        edge.style.top = Math.max(0, canvasHeight / 3 - 2 * verticalTouchSize) + "px"
+        edge.style.height = Math.min(verticalTouchSize, canvasHeight / 3) + "px"
+    }
+    left.style.left = "0px"
+    left.style.width = width * touchRatios[0] + "px"
+    right.style.right = "0px"
+    right.style.width = width * (1 - touchRatios[touchRatios.length - 2]) + "px"
+}
 
 function setCanvasHeight(h) {
     canvasHeight = h
@@ -8756,6 +8781,7 @@ function renderInternal() {
     var startRenderTime = Date.now()
     if (fx.iframe) {
         if (fx.surface) {
+            positionSurfaceNavigation(fx)
             fx.iframeCursorX = Math.max(0, Math.min(fx.iframeWrapper.clientWidth - 1, fx.iframeCursorX))
             fx.iframeCursorY = Math.max(0, Math.min(fx.iframeWrapper.clientHeight - 1, fx.iframeCursorY))
             fx.surface.move(fx.iframeCursorX, fx.iframeCursorY)
