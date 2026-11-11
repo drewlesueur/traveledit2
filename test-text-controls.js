@@ -270,9 +270,15 @@ const withChild = retained.render({ startRow: 20, viewportRows: 40, overlay: tru
 assert.equal(withChild.overlays.length, 2);
 assert.deepEqual(withChild.overlays[0], initialPanels.overlay, 'opening a child keeps the complete parent in place');
 assert.ok(withChild.overlays[1].lines.some(line => line.includes('● medium')));
+assert.equal(withChild.overlay.row, retainedRow + 1, 'choices start immediately below the selected row');
+retained.activate(retainedRow, 2); // Close the child before selecting the covered sibling.
+retained.render({ startRow: 20, viewportRows: 40, overlay: true });
 retained.activate(retainedRow + 1, 2);
 const sibling = retained.render({ startRow: 20, viewportRows: 40, overlay: true });
 assert.equal(sibling.overlays.length, 2, 'switching selector replaces only the child');
 assert.ok(sibling.overlays[1].lines.some(line => line.includes('● standard')));
+const nearBottom = retained.render({ startRow: 38, viewportRows: 40, overlay: true });
+const speedRow = nearBottom.overlays[0].row + nearBottom.overlays[0].lines.findIndex(line => line.includes('Speed:'));
+assert.equal(nearBottom.overlay.row + nearBottom.overlay.lines.length, speedRow, 'choices end immediately above their trigger near the viewport bottom');
 retained.destroy();
 console.log('Inline TravelEdit retained-parent popover checks passed');

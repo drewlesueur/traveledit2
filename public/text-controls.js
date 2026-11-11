@@ -49,8 +49,8 @@
   }
   function selectControl(popup, open, refresh, label, options, value, change) {
     const choices = options.map(option => typeof option === 'string' ? { value: option, label: option } : option);
-    popup.button(() => label + ': ' + (choices.find(option => option.value === value)?.label ?? value) + ' ▾', () => {
-      const menu = open(label, { parent: popup });
+    const trigger = popup.button(() => label + ': ' + (choices.find(option => option.value === value)?.label ?? value) + ' ▾', () => {
+      const menu = open(label, { parent: popup, trigger });
       menu.button('< Back', () => menu.close());
       for (const option of choices) menu.button(() => (option.value === value ? '● ' : '○ ') + option.label, () => {
         value = option.value; change?.(value); menu.close(); refresh();
@@ -69,7 +69,7 @@
       const hadPopup = stack.length > 0; stack = [];
       if (hadPopup) { onClose(); refresh({ focus }); }
     }
-    function open(title, { parent = null } = {}) {
+    function open(title, { parent = null, trigger = null } = {}) {
       const origin = activating || (parent ? null : stack[0]?.origin);
       if (parent) {
         const index = stack.indexOf(parent);
@@ -77,7 +77,7 @@
         stack = stack.slice(0, index + 1);
       } else if (stack.length) { stack = []; onClose(); }
       const popup = {
-        title, parent, origin, items: [], disabled: false,
+        title, parent, origin, trigger, items: [], disabled: false,
         get isOpen() { return stack.includes(popup); },
         button(label, action, options) { const node = button(label, action, options); popup.items.push(node); return node; },
         field(label, value, options = {}) {
@@ -216,17 +216,14 @@
             const panelAbove = startRow + rootCount + height >= viewportStart + viewportRows;
             panelRow = panelAbove && startRow - height >= viewportStart ? startRow - height : startRow + rootCount;
           } else {
-            // Keep the parent in place. Prefer an adjacent popover; on a narrow
-            // screen place the choices above or below it without replacing it.
-            const availableRight = viewportColumn + width - (parent.column + parent.width + 1);
-            if (availableRight >= 16) {
-              panelColumn = parent.column + parent.width + 1;
-              panelWidth = availableRight;
-              panelRow = parent.row;
-            } else {
-              panelColumn = parent.column;
-              panelRow = parent.row - height - 1 >= viewportStart ? parent.row - height - 1 : parent.row + parent.lines.length + 1;
-            }
+            // Anchor to the current trigger region, not its old screen position:
+            // scrolling or resizing may have moved the parent since activation.
+            const trigger = regions.findLast(region => region.node === (panel.trigger || panel.origin?.node));
+            const triggerRow = trigger?.row ?? parent.row;
+            panelColumn = parent.column;
+            const below = viewportStart + viewportRows - triggerRow - 1;
+            const above = triggerRow - viewportStart;
+            panelRow = height <= below || below >= above ? triggerRow + 1 : triggerRow - height;
           }
           columnOrigin = panelColumn;
           rowOrigin = panelRow - lines.length;
@@ -317,6 +314,7 @@
         let panel = panels.get(popup);
         if (!panel) {
           panel = document.createElement('section'); panel.className = 'te-dom-popup';
+          panel.addEventListener('scroll', refresh);
           panel.setAttribute('role', 'dialog'); document.body.append(panel); panels.set(popup, panel);
         }
         if (!popup.parent) root = panel;
@@ -350,23 +348,36 @@
         wanted.forEach((el, index) => { if (panel.children[index] !== el) panel.insertBefore(el, panel.children[index] || null); });
       }
       const rect = anchor?.getBoundingClientRect();
-      let bottom = Math.max(8, window.innerHeight - (rect?.top ?? window.innerHeight - 8) + 4);
-      const available = Math.max(100, window.innerHeight - bottom - 8);
-      for (const popup of [...stack].reverse()) {
+      const bottom = Math.max(8, window.innerHeight - (rect?.top ?? window.innerHeight - 8) + 4);
+      for (const popup of stack) {
         const panel = panels.get(popup);
+        panel.style.top = '';
         panel.style.bottom = bottom + 'px';
-        panel.style.maxHeight = Math.floor(available / stack.length) + 'px';
-        bottom += panel.getBoundingClientRect().height + 8;
+        panel.style.maxHeight = Math.max(100, window.innerHeight - bottom - 8) + 'px';
+        const triggerRect = popup.parent && elements.get(popup.trigger)?.getBoundingClientRect();
+        if (triggerRect) {
+          const below = Math.max(0, window.innerHeight - triggerRect.bottom - 8);
+          const above = Math.max(0, triggerRect.top - 8);
+          const height = panel.getBoundingClientRect().height;
+          if (height <= below || below >= above) {
+            panel.style.bottom = 'auto';
+            panel.style.top = triggerRect.bottom + 'px';
+            panel.style.maxHeight = below + 'px';
+          } else {
+            panel.style.bottom = (window.innerHeight - triggerRect.top) + 'px';
+            panel.style.maxHeight = above + 'px';
+          }
+        }
       }
     }
-    function open(title, { parent = null } = {}) {
+    function open(title, { parent = null, trigger = null } = {}) {
       if (parent) {
         const index = stack.indexOf(parent);
         if (index < 0) throw new Error('Parent popup is closed');
         stack = stack.slice(0, index + 1);
       } else if (stack.length) { stack = []; onClose(); }
       const popup = {
-        title, parent, items: [], disabled: false,
+        title, parent, trigger, items: [], disabled: false,
         frame(url, title) { const node = { type: 'frame', url, title }; popup.items.push(node); return node; },
         get isOpen() { return stack.includes(popup); },
         button(label, action, options) { const node = button(label, action, options); popup.items.push(node); return node; },
