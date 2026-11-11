@@ -32,6 +32,9 @@ type Config struct {
 	StateFile string
 	ScriptURL string
 	Assets    fs.FS
+	// EnableEditor enables the normal command and file APIs for trusted users.
+	EnableEditor bool
+	Directory    string
 }
 
 type File struct {
@@ -60,8 +63,8 @@ type Workspace struct {
 }
 
 // Handler implements http.Handler and owns all of its mutable workspace state.
-// Supported tab types are devtracker and dtai-command. Host filesystem, shell,
-// terminal, alternate entry points, and executable templates are not exposed.
+// Task tabs are always supported. EnableEditor adds the normal TravelEdit
+// command and file APIs; the embedding host must authorize that capability.
 type Handler struct {
 	mu         sync.Mutex
 	config     Config
@@ -70,9 +73,25 @@ type Handler struct {
 	current    int
 	nextID     int
 	closed     bool
+	runs       map[int]*commandRun
 }
 
 func New(config Config) (*Handler, error) {
+	if config.EnableEditor {
+		directory := config.Directory
+		if directory == "" {
+			var err error
+			directory, err = os.Getwd()
+			if err != nil {
+				return nil, err
+			}
+		}
+		absolute, err := filepath.Abs(directory)
+		if err != nil {
+			return nil, err
+		}
+		config.Directory = absolute
+	}
 	if config.StateFile != "" {
 		absolute, err := filepath.Abs(config.StateFile)
 		if err != nil {
@@ -123,7 +142,12 @@ func New(config Config) (*Handler, error) {
 			w.Files = []*File{}
 		}
 		for _, f := range w.Files {
-			if f == nil || !validTab(f.Type, f.FullPath) || f.ID <= 0 || seen[f.ID] {
+			if f != nil && f.Type == "dtai-command" && config.EnableEditor {
+				f.Type = "shell"
+				f.CWD = config.Directory
+				f.FullPath = config.MountPath + "/cmd"
+			}
+			if f == nil || !h.validFile(f) || f.ID <= 0 || seen[f.ID] {
 				return nil, errors.New("invalid editor tab in saved workspace")
 			}
 			seen[f.ID] = true
@@ -147,16 +171,33 @@ func validTab(kind, fullPath string) bool {
 }
 func (h *Handler) newWorkspace(name string) *Workspace {
 	h.nextID++
+	if h.config.EnableEditor {
+		return &Workspace{Name: name, Files: []*File{{ID: h.nextID, Type: "directory", FullPath: h.config.Directory}}}
+	}
 	return &Workspace{Name: name, Files: []*File{{ID: h.nextID, Type: "dtai-command", FullPath: "cmd"}}}
 }
 
 // Close prevents further requests and waits for active state mutations.
-// Responses already captured may finish sending; slow clients cannot hold the
-// state lock. There is no worker, listener, or outstanding flush to stop.
+// Active commands are canceled and reaped. Responses already captured may
+// finish sending; slow clients cannot hold the state lock.
 func (h *Handler) Close() error {
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	h.closed = true
+	runs := make([]*commandRun, 0, len(h.runs))
+	for _, run := range h.runs {
+		run.cancel()
+		runs = append(runs, run)
+	}
+	h.mu.Unlock()
+	timeout := time.NewTimer(2 * time.Second)
+	defer timeout.Stop()
+	for _, run := range runs {
+		select {
+		case <-run.done:
+		case <-timeout.C:
+			return fmt.Errorf("command shutdown timed out")
+		}
+	}
 	return nil
 }
 
@@ -171,6 +212,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	if route == "" {
 		route = "/"
+	}
+	w.Header().Set("Cache-Control", "no-store")
+	if h.config.EnableEditor && h.serveEditor(w, r, route) {
+		return
 	}
 	h.mu.Lock()
 	locked := true
@@ -260,7 +305,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		result = map[string]any{"workspace": h.workspaces[h.current], "workspacesList": names}
 	case "/myaddfile":
 		kind, fullPath := r.FormValue("fileType"), r.FormValue("fullPath")
-		if !validTab(kind, fullPath) {
+		if !h.validFile(&File{Type: kind, FullPath: fullPath}) {
 			fail(403, "Unsupported task tab")
 			return
 		}
@@ -281,6 +326,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			found = true
 			if route == "/myclose" {
+				if run := h.runs[id]; run != nil {
+					run.cancel()
+				}
 				current.Files = append(current.Files[:i], current.Files[i+1:]...)
 			} else {
 				f.Name = r.FormValue("name")

@@ -6,14 +6,16 @@ compiled `traveledit` executable and its normal flags and authentication.
 ## Embedding text tabs
 
 The `editor` package serves the same text-canvas frontend as an `http.Handler`.
-It currently exposes task text tabs and their workspace APIs; host filesystem
-and terminal APIs remain in the standalone executable.
+It exposes task text tabs and, with `EnableEditor`, the ordinary command and
+file APIs used by TravelEdit. The host controls authentication and access.
 
 ```go
 import "github.com/drewlesueur/traveledit2/editor"
 
 app, err := editor.New(editor.Config{
     MountPath: "/editor",
+    EnableEditor: true,
+    Directory: "/path/to/project",
     StateFile: "/private/state/workspaces.json",
     ScriptURL: "/my-task-client.js",
 })
@@ -41,9 +43,11 @@ the default embeds `index.html`, `md52.js`, and the standalone login form from
 the same `public` directory used by the standalone editor. No source checkout
 is read at runtime by the default embedded handler.
 
-Creating a handler does not register global flags, change cwd/environment,
-start goroutines, bind a socket, or launch a process. The package and its default
-assets depend only on the Go standard library.
+Creating a handler does not register global flags, change process cwd or
+environment, bind a socket, or launch an editor process. Ordinary `cmd` requests
+launch shell commands when `EnableEditor` is enabled; closing the handler stops
+its active commands. Leave that option off for hosts that only need task tabs.
+The package and its default assets depend only on the Go standard library.
 
 The standalone `DEVTRACKER_MODE=1` entry point also uses this package, so its
 workspace behavior and the embedded behavior share one implementation. It

@@ -3318,7 +3318,6 @@ function getDefaultCWDInner(f) {
 }
 
 function addCmdTab(id=0, cwd="", name="") {
-    if (window.devTracker) return devTracker.cmd()
     // I think this /cmd isn't hit on the server
     // I think we need a special endpoint for serving files and not just /
     var file = makeFile(proxyPath + "/cmd", 0, shellHelpers.join("\n"))
@@ -6949,7 +6948,7 @@ function openTerminal() {
     
 }
 function closeFileServer(theFile) {
-    if (window.devTracker) return devTracker.closeFile(theFile || fx)
+    if (window.devTracker && (theFile || fx)?.fileMode == "devtracker") return devTracker.closeFile(theFile || fx)
     if (!theFile) {
         theFile = fx
     }
@@ -7700,7 +7699,6 @@ var keyMaping = {
     "ArrowRight": "\x1b[C",
 }
 function handleKeydown(e) {
-    if (window.devTracker && fx.fileMode == "dtai-command" && e.key == "Enter") { e.preventDefault(); devTracker.enter(); return false }
     if (window.devTracker && fx.fileMode == "devtracker" && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown", "Tab"].includes(e.key)) {
         if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() != "c") e.preventDefault()
         return
@@ -12949,7 +12947,7 @@ function fetchWorkspaceWithList(index) {
         for (var serverFile of workspace.Files) {
             // TODO: fix inconsistent file naming #inconsistentFileNaming
             var f
-            if (window.devTracker && (serverFile.Type == "devtracker" || serverFile.Type == "dtai-command")) {
+            if (window.devTracker && serverFile.Type == "devtracker") {
                 f = devTracker.restore(serverFile)
             } else if (serverFile.Type == "terminal") {
                 f = addExistingTerminalTab(serverFile.ID, serverFile.Name, serverFile.CWD)
@@ -12968,7 +12966,7 @@ function fetchWorkspaceWithList(index) {
         }
         initialFileAdding = false
         if (window.devTracker) {
-            if (!files.length) devTracker.cmd()
+            if (!files.length) addCmdTab()
             devTracker.didSelect()
         }
         var ust = new URLSearchParams(window.location.search)

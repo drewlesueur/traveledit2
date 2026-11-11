@@ -16,6 +16,7 @@ import (
 
 type standaloneTaskOptions struct {
 	mountPath           string
+	directory           string
 	prefixTrimmed       bool
 	loginFile           string
 	allowedIPs          map[string]bool
