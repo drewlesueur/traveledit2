@@ -9405,10 +9405,10 @@ function renderInternal() {
                 t.fillStyle = "deepskyblue"
                 TravelEditUI.drawBoxCharacter(t, chr, x*fontWidth, y*fontHeight, fontWidth, fontHeight, boxStrokeWidth)
             } else if (chr > "\xff") {
-                t.fillStyle = "deepskyblue"
+                t.fillStyle = window.devTracker?.color ? devTracker.color(fx, theIndex, x + fx.offsetX, "deepskyblue", isDark) : "deepskyblue"
                 t.fillText(chr, x*fontWidth, y*fontHeight + fontOffsetY)
             } else if (chr > "\x7f") {
-                t.fillStyle = "lawngreen"
+                t.fillStyle = window.devTracker?.color ? devTracker.color(fx, theIndex, x + fx.offsetX, "lawngreen", isDark) : "lawngreen"
                 t.fillText(chr, x*fontWidth, y*fontHeight + fontOffsetY)
 
             } else if (chr != "" && chr != " ") {
@@ -9422,6 +9422,7 @@ function renderInternal() {
                     t.fillStyle = textFillStyle
                 }
                 // end #color
+                if (window.devTracker?.color) t.fillStyle = devTracker.color(fx, theIndex, x + fx.offsetX, t.fillStyle, isDark)
 
                 if (fauxMono) {
                     var charCode = chr.charCodeAt(0)
