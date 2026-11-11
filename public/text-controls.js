@@ -53,7 +53,7 @@
       const menu = open(label, { parent: popup, trigger });
       menu.button('< Back', () => menu.close());
       for (const option of choices) menu.button(() => (option.value === value ? '● ' : '○ ') + option.label, () => {
-        value = option.value; change?.(value); menu.close(); refresh();
+        value = option.value; menu.close(); change?.(value); refresh();
       }, { disabled: option.disabled });
       refresh();
     });
@@ -322,6 +322,7 @@
         let heading = elements.get(popup);
         if (!heading) { heading = document.createElement('strong'); elements.set(popup, heading); }
         heading.textContent = popup.title;
+        const scrollTop = panel.scrollTop;
         const wanted = [heading];
         for (const node of popup.items) {
           let el = elements.get(node);
@@ -346,6 +347,7 @@
         wanted.push(close);
         for (const el of [...panel.children]) if (!wanted.includes(el)) el.remove();
         wanted.forEach((el, index) => { if (panel.children[index] !== el) panel.insertBefore(el, panel.children[index] || null); });
+        panel.scrollTop = scrollTop;
       }
       const rect = anchor?.getBoundingClientRect();
       const bottom = Math.max(8, window.innerHeight - (rect?.top ?? window.innerHeight - 8) + 4);
