@@ -146,3 +146,8 @@ Both popup surfaces provide `popup.select(label, options, value, onChange)`
 for a compact current-value button with a nested choice menu. Options may be
 strings or `{value, label, disabled}` objects. Picking an option calls `onChange`
 and returns to the parent popup; the current choice is marked in the submenu.
+
+Text popup rendering returns an `overlays` array in paint order so hosts can
+keep parent panels visible while nested popovers are open. The `overlay` field
+continues to expose the topmost panel. DOM controls retain separate panels for
+parents and children; Escape closes the innermost panel first.

@@ -173,8 +173,9 @@
           row(text, node, 0, Array.from(text).length);
         }
       }
-      function box() {
-        const inner = Math.max(3, width - 4, ...popup.items.filter(node => node.type === 'field')
+      function box(panel = popup, panelWidth = width) {
+        const popup = panel;
+        const inner = Math.max(3, panelWidth - 4, ...popup.items.filter(node => node.type === 'field')
           .flatMap(node => node.value.split('\n').map(text => measure(text) + 3)));
         row('┌' + clip('─ ' + popup.title + ' ', inner).padEnd(inner, '─') + '┐');
         for (const node of popup.items) {
@@ -201,29 +202,42 @@
       const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length + 2 : 1), 2) : 0;
       const above = popup && startRow + (rootLayout === 'row' ? Math.min(1, content.length) * (buttonStyle === 'box' ? 3 : 1) : content.length) + boxHeight >= viewportStart + viewportRows;
       let floating = null;
+      const overlays = [];
       if (overlay) {
         roots();
-        if (popup) {
-          const rootCount = lines.length;
-          const anchor = popup.parent && popup.origin;
-          const anchorRow = anchor ? anchor.row : startRow;
-          columnOrigin = anchor ? Math.max(0, anchor.start - 1) : Math.max(0, viewportColumn);
-          const needsAbove = anchor ? anchorRow + 1 + boxHeight >= viewportStart + viewportRows : above;
-          const putAbove = needsAbove && anchorRow - boxHeight >= viewportStart;
-          const popupRow = putAbove ? anchorRow - boxHeight : anchor ? anchorRow + 1 : startRow + rootCount;
-          const addAnchor = () => {
-            row(anchor.text);
-            regions.push({ ...anchor, node: anchor.node, disabled: anchor.node.disabled });
-          };
-          rowOrigin = (anchor && !putAbove ? anchorRow : popupRow) - rootCount;
-          if (anchor && !putAbove) addAnchor();
-          box();
-          if (anchor && putAbove) addAnchor();
-          floating = { row: anchor && !putAbove ? anchorRow : popupRow, column: columnOrigin, lines: lines.splice(rootCount) };
+        const rootCount = lines.length;
+        for (const panel of stack) {
+          const parent = overlays.at(-1);
+          const height = panel.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length + 2 : 1), 2);
+          let panelWidth = width;
+          let panelRow, panelColumn;
+          if (!parent) {
+            panelColumn = Math.max(0, viewportColumn);
+            const panelAbove = startRow + rootCount + height >= viewportStart + viewportRows;
+            panelRow = panelAbove && startRow - height >= viewportStart ? startRow - height : startRow + rootCount;
+          } else {
+            // Keep the parent in place. Prefer an adjacent popover; on a narrow
+            // screen place the choices above or below it without replacing it.
+            const availableRight = viewportColumn + width - (parent.column + parent.width + 1);
+            if (availableRight >= 16) {
+              panelColumn = parent.column + parent.width + 1;
+              panelWidth = availableRight;
+              panelRow = parent.row;
+            } else {
+              panelColumn = parent.column;
+              panelRow = parent.row - height - 1 >= viewportStart ? parent.row - height - 1 : parent.row + parent.lines.length + 1;
+            }
+          }
+          columnOrigin = panelColumn;
+          rowOrigin = panelRow - lines.length;
+          box(panel, panelWidth);
+          const panelLines = lines.splice(rootCount);
+          floating = { row: panelRow, column: panelColumn, width: Math.max(...panelLines.map(measure)), lines: panelLines };
+          overlays.push(floating);
         }
       } else if (above) { box(); roots(); } else { roots(); if (popup) box(); }
       firstAction = regions.find(region => !region.disabled && (!popup || popup.items.includes(region.node))) || regions.find(region => !region.disabled) || null;
-      return { lines, overlay: floating };
+      return { lines, overlay: floating, overlays };
     }
     // Popup regions are appended after the underlying row and take precedence
     // when a compact menu overlays one of its buttons.
@@ -279,60 +293,71 @@
   // Hosts choose the surface; actions and field models remain independent of it.
   function createDOMControls({ onClose = () => {} } = {}) {
     let stack = [], anchor = null, root = null;
-    const elements = new WeakMap();
+    const elements = new WeakMap(), panels = new Map();
     const valueOf = value => String(typeof value === 'function' ? value() : value ?? '');
     const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
-    function outside(event) { if (root && !root.contains(event.target) && !anchor?.contains(event.target)) closeAll(); }
-    function key(event) { if (event.key === 'Escape') { event.preventDefault(); closeAll(); anchor?.focus?.(); } }
+    function outside(event) { if (root && ![...panels.values()].some(panel => panel.contains(event.target)) && !anchor?.contains(event.target)) closeAll(); }
+    function key(event) { if (event.key === 'Escape') { event.preventDefault(); stack.at(-1)?.close(); if (!stack.length) anchor?.focus?.(); } }
     function closeAll() {
       if (!stack.length) return;
-      stack = []; root?.remove(); root = null;
+      stack = []; for (const panel of panels.values()) panel.remove(); panels.clear(); root = null;
       document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', key);
       window.removeEventListener('resize', refresh); window.visualViewport?.removeEventListener('resize', refresh);
       onClose();
     }
     function refresh() {
-      const popup = stack.at(-1);
-      if (!popup) return;
-      if (!root) {
-        root = document.createElement('section'); root.className = 'te-dom-popup';
-        root.setAttribute('role', 'dialog');
-        document.body.append(root);
+      if (!stack.length) return;
+      for (const [popup, panel] of panels) if (!stack.includes(popup)) { panel.remove(); panels.delete(popup); }
+      if (!root || !root.isConnected) {
+        root = null;
         document.addEventListener('pointerdown', outside); document.addEventListener('keydown', key);
         window.addEventListener('resize', refresh); window.visualViewport?.addEventListener('resize', refresh);
       }
-      root.setAttribute('aria-label', popup.title);
-      let heading = elements.get(popup);
-      if (!heading) { heading = document.createElement('strong'); elements.set(popup, heading); }
-      heading.textContent = popup.title;
-      const wanted = [heading];
-      for (const node of popup.items) {
-        let el = elements.get(node);
-        if (!el) {
-          el = document.createElement(node.type === 'button' ? 'button' : node.type === 'field' ? 'textarea' : node.type === 'frame' ? 'iframe' : 'div');
-          if (node.type === 'frame') { el.src = node.url; el.title = node.title; }
-          if (node.type === 'button') { el.type = 'button'; el.addEventListener('click', () => node.action?.()); }
-          if (node.type === 'field') {
-            el.rows = node.multiline ? 3 : 1; el.setAttribute('aria-label', node.label);
-            el.addEventListener('input', () => { node.value = el.value; node.onInput?.(node.value); });
-            el.addEventListener('blur', () => node.onBlur?.());
-          }
-          elements.set(node, el);
+      for (const popup of stack) {
+        let panel = panels.get(popup);
+        if (!panel) {
+          panel = document.createElement('section'); panel.className = 'te-dom-popup';
+          panel.setAttribute('role', 'dialog'); document.body.append(panel); panels.set(popup, panel);
         }
-        if (node.type === 'field') { if (document.activeElement !== el) el.value = node.value; }
-        else if (node.type !== 'frame') el.textContent = valueOf(node.type === 'button' ? node.label : node.text);
-        el.disabled = popup.disabled || node.disabled || false;
-        wanted.push(el);
+        if (!popup.parent) root = panel;
+        panel.setAttribute('aria-label', popup.title);
+        let heading = elements.get(popup);
+        if (!heading) { heading = document.createElement('strong'); elements.set(popup, heading); }
+        heading.textContent = popup.title;
+        const wanted = [heading];
+        for (const node of popup.items) {
+          let el = elements.get(node);
+          if (!el) {
+            el = document.createElement(node.type === 'button' ? 'button' : node.type === 'field' ? 'textarea' : node.type === 'frame' ? 'iframe' : 'div');
+            if (node.type === 'frame') { el.src = node.url; el.title = node.title; }
+            if (node.type === 'button') { el.type = 'button'; el.addEventListener('click', () => node.action?.()); }
+            if (node.type === 'field') {
+              el.rows = node.multiline ? 3 : 1; el.setAttribute('aria-label', node.label);
+              el.addEventListener('input', () => { node.value = el.value; node.onInput?.(node.value); });
+              el.addEventListener('blur', () => node.onBlur?.());
+            }
+            elements.set(node, el);
+          }
+          if (node.type === 'field') { if (document.activeElement !== el) el.value = node.value; }
+          else if (node.type !== 'frame') el.textContent = valueOf(node.type === 'button' ? node.label : node.text);
+          el.disabled = popup.disabled || node.disabled || false;
+          wanted.push(el);
+        }
+        let close = popup.closeButton;
+        if (!close) { close = popup.closeButton = document.createElement('button'); close.type = 'button'; close.textContent = popup.parent ? 'Back' : 'Close'; close.addEventListener('click', () => popup.close()); }
+        wanted.push(close);
+        for (const el of [...panel.children]) if (!wanted.includes(el)) el.remove();
+        wanted.forEach((el, index) => { if (panel.children[index] !== el) panel.insertBefore(el, panel.children[index] || null); });
       }
-      let close = popup.closeButton;
-      if (!close) { close = popup.closeButton = document.createElement('button'); close.type = 'button'; close.textContent = popup.parent ? 'Back' : 'Close'; close.addEventListener('click', () => popup.close()); }
-      wanted.push(close);
-      for (const el of [...root.children]) if (!wanted.includes(el)) el.remove();
-      wanted.forEach((el, index) => { if (root.children[index] !== el) root.insertBefore(el, root.children[index] || null); });
       const rect = anchor?.getBoundingClientRect();
-      const bottom = Math.max(8, window.innerHeight - (rect?.top ?? window.innerHeight - 8) + 4);
-      root.style.bottom = bottom + 'px';
-      root.style.maxHeight = Math.max(100, window.innerHeight - bottom - 8) + 'px';
+      let bottom = Math.max(8, window.innerHeight - (rect?.top ?? window.innerHeight - 8) + 4);
+      const available = Math.max(100, window.innerHeight - bottom - 8);
+      for (const popup of [...stack].reverse()) {
+        const panel = panels.get(popup);
+        panel.style.bottom = bottom + 'px';
+        panel.style.maxHeight = Math.floor(available / stack.length) + 'px';
+        bottom += panel.getBoundingClientRect().height + 8;
+      }
     }
     function open(title, { parent = null } = {}) {
       if (parent) {
