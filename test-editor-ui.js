@@ -88,13 +88,13 @@ const resizing = {
   innerWidth: 390, innerHeight: 844, screen: { width: 390, height: 844 },
   c: { style: {} }, fx: { fileMode: 'devtracker' }, devTracker: {},
   setCanvasWidth() {}, setCanvasHeight(value) { resizing.result = value; },
-  setCanvasHeightAccordingly() { resizing.result = 1710 - 56 * 3; },
+  setCanvasHeightAccordingly() { resizing.result = 1710 - 22 * 3; },
 };
 resizing.window = resizing;
 vm.createContext(resizing);
 vm.runInContext(implementation('doSizing').replace(/\ndoSizing\(\)\s*$/, ''), resizing);
 resizing.doSizing();
-assert.equal(resizing.result, 1542, 'task resize retains the control-row reduction');
+assert.equal(resizing.result, 1644, 'task resize retains only the extra status-strip reduction');
 resizing.fx.fileMode = 'shell'; resizing.doSizing();
 assert.equal(resizing.result, 1710, 'native cmd resize keeps its existing height');
 resizing.fx = undefined; resizing.doSizing();

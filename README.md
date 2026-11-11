@@ -123,7 +123,8 @@ corner directions, and scaling without a browser.
 The embedded DevTracker adapter can use the hidden `devTrackerToolbar` native
 row. Its seven default slots are status, interrupt, voice, bot settings, diff
 review, send, and accept; actions delegate to `devTracker.toolbarAction`. The
-adapter controls visibility and accounts for its height alongside host controls.
+adapter controls visibility. The task row replaces the native file row, so only
+the additional status strip above the canvas is deducted from the canvas height.
 Standalone file and cmd toolbars keep their existing actions.
 
 The four corner characters render as rounded quarter-rings while retaining their
