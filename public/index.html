@@ -459,6 +459,12 @@ They get changed later on.
     <div class=square onclick="fx.iframe.contentWindow.location.reload()">refresh iframe</div>
 </div>
 
+<div class="toolbar hidden" id="desktopToolbar1">
+    <div class="middleButton" onclick="selectDesktopNeighbor(-1)">Previous tab</div>
+    <div class="middleButton" id="desktopKeyboardButton" onclick="fx.surface?.toggleKeyboard()">Show keyboard</div>
+    <div class="middleButton" onclick="selectDesktopNeighbor(1)">Next tab</div>
+</div>
+
 <!-- workspace toolbar was here -->
 
 <div class="toolbar hidden" id=shellToolbar1 style="--display: none">
@@ -2132,7 +2138,16 @@ function addIframe(url, id, name, cwd) {
     iframe.onload = function() {
         // Optional same-origin remote surface: native cursor gestures drive it.
         f.surface = iframe.contentWindow.travelEditSurface
+        if (fx === f) updateDesktopControls()
+        if (!f.surface) showSurfaceNavigation(f, false)
         if (f.surface) {
+            f.surface.onControlsChange = function() {
+                if (fx === f) {
+                    updateDesktopControls()
+                    showSurfaceNavigation(f)
+                    setCanvasHeightAccordingly()
+                }
+            }
             f.surface.onPointerMove = function(position) {
                 f.iframeCursorX = position.x
                 f.iframeCursorY = position.y
@@ -2156,6 +2171,7 @@ function addIframe(url, id, name, cwd) {
                     return edge
                 })
             }
+            if (fx === f) updateDesktopControls()
             setCanvasHeightAccordingly()
             f.surface.activate(fx === f)
             showSurfaceNavigation(f, fx === f)
@@ -5416,6 +5432,10 @@ function showSurfaceNavigation(file, visible = true) {
     for (const edge of file.surfaceNavigation) edge.style.display = visible ? "block" : "none"
     if (visible) {
         positionSurfaceNavigation(file)
+        if (file.surface?.kind === "desktop") {
+            for (const edge of file.surfaceNavigation) edge.style.display = file.surface.keyboardVisible ? "none" : "block"
+            return
+        }
         surfaceNavigationTimers.set(file, setTimeout(() => showSurfaceNavigation(file, false), 1000))
     }
 }
@@ -12777,6 +12797,20 @@ function goUpDirectory() {
     }
 }
     
+function selectDesktopNeighbor(direction) {
+    const neighbor = files[files.indexOf(fx) + direction]
+    if (neighbor && neighbor !== fx) setCurrentFile(neighbor)
+}
+
+function updateDesktopControls() {
+    const desktop = fx?.fileMode === "iframe" && fx.surface?.kind === "desktop"
+    desktopToolbar1.classList.toggle("hidden", !desktop)
+    if (fx?.fileMode === "iframe") iframeToolbar1.classList.toggle("hidden", desktop)
+    if (desktop) {
+        desktopKeyboardButton.textContent = fx.surface.keyboardVisible ? "Hide keyboard" : "Show keyboard"
+    }
+}
+
 function setCurrentFile(file) {
     if (!file) {
         return
@@ -12843,6 +12877,7 @@ function setCurrentFile(file) {
         showSurfaceNavigation(lastFile, false)
         lastFile.iframeWrapper.style.display = "none"
     }
+    updateDesktopControls()
     fx.surface?.activate(true)
     setCanvasHeightAccordingly()
     showSurfaceNavigation(fx)

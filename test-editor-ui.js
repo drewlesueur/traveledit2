@@ -187,3 +187,24 @@ assert.ok(desktopEdges.surfaceNavigation.every(e => e.style.display === 'none'),
 assert.equal(edgeTimers.size, 0);
 edgeContext.showSurfaceNavigation({fileMode:'file'});
 console.log('Desktop transient edge navigation checks passed');
+
+const persistentEdges = {surface: {kind:'desktop', keyboardVisible:false}, surfaceNavigation:[{style:{}},{style:{}}]};
+edgeContext.showSurfaceNavigation(persistentEdges);
+assert.equal(edgeTimers.size, 0);
+assert.ok(persistentEdges.surfaceNavigation.every(e => e.style.display === 'block'));
+persistentEdges.surface.keyboardVisible = true;
+edgeContext.showSurfaceNavigation(persistentEdges);
+assert.ok(persistentEdges.surfaceNavigation.every(e => e.style.display === 'none'));
+edgeContext.showSurfaceNavigation(persistentEdges, false);
+assert.equal(edgeTimers.size, 0);
+console.log('Desktop keyboard-aware edge navigation checks passed');
+
+const neighbors = {files:[{},{}], setCurrentFile(f) { neighbors.fx=f; }};
+neighbors.fx=neighbors.files[1];
+vm.createContext(neighbors);
+vm.runInContext(implementation('selectDesktopNeighbor'),neighbors);
+neighbors.selectDesktopNeighbor(1);
+assert.equal(neighbors.fx,neighbors.files[1], 'last tab is not duplicated');
+neighbors.selectDesktopNeighbor(-1);
+assert.equal(neighbors.fx,neighbors.files[0]);
+console.log('Desktop toolbar tab navigation checks passed');
