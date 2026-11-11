@@ -8763,6 +8763,10 @@ function renderInternal() {
         t.fillRect(canvasWidth - navTouchSize*3, 0, navTouchSize*3, canvasHeight)
     }
     
+    if (window.devTracker?.drawDraftControl) devTracker.drawDraftControl(t, fx, {
+        cellWidth: fontWidth, cellHeight: fontHeight, baseline: fontOffsetY,
+        font: fontCSS, stroke: boxStrokeWidth, dark: isDark, viewportWidth: c.width, viewportHeight: maxLines * fontHeight
+    })
     // draw line where your cursor is for help with finding
     var underlineOffset = (fontHeight) - (1/6/2 * fontHeight)
     // var underlineHeight = fontHeight/6
@@ -13404,6 +13408,7 @@ function toSnakeCase(str) {
 
 // not sure this feature is a good idea
 function checkButtonAction() {
+    if (window.devTracker?.activateDraft?.(fx)) return true
     if (fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) return true
     var w = getWordAtCursor(isHashTag)
     if (w.word in buttonActions) {
@@ -14254,6 +14259,7 @@ function touchAreasPress(e, state) {
 }
 
 function middleTouchHandling() {
+    if (window.devTracker?.activateDraft?.(fx)) return
     if (fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) return
     // now only bottom middle
     if (fx.fileMode == "directory") {

@@ -47,6 +47,26 @@
     if (arms & 8) fill(left, centerY, centerX - left, stroke);
     return true;
   }
+  // Visual field chrome only: the host retains its native text/editing model.
+  function drawTextInput(context, { x, y, columns, rows, cellWidth, cellHeight, baseline, font,
+    viewportWidth = Infinity, viewportHeight = Infinity, label = 'Reply', placeholder = '', borderColor = 'deepskyblue', textColor = 'gray', stroke = 1 }) {
+    const oldFill = context.fillStyle, oldFont = context.font;
+    context.fillStyle = borderColor;
+    columns = Math.max(4, columns); rows = Math.max(3, rows);
+    const title = (' ' + label + ' ').slice(0, columns - 2);
+    const cell = (char, col, row) => drawBoxCharacter(context, char, x + col * cellWidth, y + row * cellHeight, cellWidth, cellHeight, stroke);
+    cell('┌', 0, 0); cell('┐', columns - 1, 0);
+    cell('└', 0, rows - 1); cell('┘', columns - 1, rows - 1);
+    for (let col = Math.max(1, Math.floor(-x / cellWidth)); col < Math.min(columns - 1, Math.ceil((viewportWidth - x) / cellWidth)); col++) {
+      if (col > title.length) cell('─', col, 0);
+      cell('─', col, rows - 1);
+    }
+    for (let row = Math.max(1, Math.floor(-y / cellHeight)); row < Math.min(rows - 1, Math.ceil((viewportHeight - y) / cellHeight)); row++) { cell('│', 0, row); cell('│', columns - 1, row); }
+    context.font = font; context.fillStyle = textColor;
+    context.fillText(title, x + cellWidth, y + baseline);
+    if (placeholder) context.fillText(placeholder.slice(0, columns - 2), x + cellWidth, y + cellHeight + baseline);
+    context.fillStyle = oldFill; context.font = oldFont;
+  }
   function selectControl(popup, open, refresh, label, options, value, change) {
     const choices = options.map(option => typeof option === 'string' ? { value: option, label: option } : option);
     const trigger = popup.button(() => label + ': ' + (choices.find(option => option.value === value)?.label ?? value) + ' ▾', () => {
@@ -404,6 +424,6 @@
     return { button, open, refresh, closeAll, get isOpen() { return stack.length > 0; },
       setAnchor(element) { anchor = element; }, setContent() {}, destroy: closeAll };
   }
-  host.TravelEditUI = { createDOMControls, createControls, isBoxCharacter, drawBoxCharacter };
+  host.TravelEditUI = { drawTextInput, createDOMControls, createControls, isBoxCharacter, drawBoxCharacter };
   if (typeof module !== 'undefined' && module.exports) module.exports = host.TravelEditUI;
 })(typeof window === 'undefined' ? globalThis : window);
