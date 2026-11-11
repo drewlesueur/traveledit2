@@ -609,7 +609,7 @@ func main() {
 	log.Printf("proxyPath is: %s", *proxyPath)
 
 	if os.Getenv("DEVTRACKER_MODE") == "1" {
-		if err := runTaskEditor(*serverAddress, *unixSocket, *proxyPath, workspacesFile); err != nil {
+		if err := runTaskEditor(*serverAddress, *unixSocket, workspacesFile, standaloneTaskOptions{mountPath: *proxyPath, prefixTrimmed: *proxyPathTrimmed, loginFile: *loginFile, allowedIPs: allowedIPsMap, allowedForwardedIPs: allowedXForwardedForsMap}); err != nil {
 			log.Fatal(err)
 		}
 		return
@@ -2683,19 +2683,19 @@ func buildTree(dir string) (string, []string, error) {
 
 // The CLI and embedding hosts use the same task workspace implementation.
 // The normal standalone file/shell editor above retains its existing behavior.
-func runTaskEditor(address, socketPath, mountPath, stateFile string) error {
+func runTaskEditor(address, socketPath, stateFile string, options standaloneTaskOptions) error {
 	scriptURL := os.Getenv("TRAVELEDIT_SCRIPT_URL")
 	if scriptURL == "" {
-		scriptURL = strings.TrimSuffix(mountPath, "/") + "/devtracker.js"
+		scriptURL = strings.TrimSuffix(options.mountPath, "/") + "/devtracker.js"
 	}
-	app, err := editor.New(editor.Config{MountPath: mountPath, StateFile: stateFile, ScriptURL: scriptURL})
+	app, err := editor.New(editor.Config{MountPath: options.mountPath, StateFile: stateFile, ScriptURL: scriptURL})
 	if err != nil {
 		return err
 	}
 	defer app.Close()
-	var handler http.Handler = app
-	if os.Getenv("NOBASICAUTH") == "" {
-		handler = BasicAuth(handler)
+	handler, err := standaloneTaskHandler(app, options)
+	if err != nil {
+		return err
 	}
 	if socketPath == "" {
 		return http.ListenAndServe(address, handler)

@@ -73,6 +73,14 @@ type Handler struct {
 }
 
 func New(config Config) (*Handler, error) {
+	if config.StateFile != "" {
+		absolute, err := filepath.Abs(config.StateFile)
+		if err != nil {
+			return nil, fmt.Errorf("resolve editor state path: %w", err)
+		}
+		config.StateFile = absolute
+	}
+
 	if config.MountPath == "/" {
 		config.MountPath = ""
 	}
@@ -142,8 +150,9 @@ func (h *Handler) newWorkspace(name string) *Workspace {
 	return &Workspace{Name: name, Files: []*File{{ID: h.nextID, Type: "dtai-command", FullPath: "cmd"}}}
 }
 
-// Close prevents further requests. Mutations are persisted before their HTTP
-// response, so there is no worker, listener, or outstanding flush to stop.
+// Close prevents further requests and waits for active state mutations.
+// Responses already captured may finish sending; slow clients cannot hold the
+// state lock. There is no worker, listener, or outstanding flush to stop.
 func (h *Handler) Close() error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -164,18 +173,28 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		route = "/"
 	}
 	h.mu.Lock()
-	defer h.mu.Unlock()
+	locked := true
+	unlock := func() {
+		if locked {
+			h.mu.Unlock()
+			locked = false
+		}
+	}
+	defer unlock()
 	if h.closed {
+		unlock()
 		http.Error(w, "Editor closed", http.StatusServiceUnavailable)
 		return
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	if route == "/" && (r.Method == "GET" || r.Method == "HEAD") {
+		unlock()
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		http.ServeContent(w, r, "index.html", time.Time{}, bytes.NewReader(h.index))
 		return
 	}
 	if strings.HasPrefix(route, "/tepublic/") && (r.Method == "GET" || r.Method == "HEAD") {
+		unlock()
 		name := strings.TrimPrefix(route, "/tepublic/")
 		if !fs.ValidPath(name) || name == "." {
 			http.NotFound(w, r)
@@ -191,19 +210,30 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 	// These are the workspace endpoints used by the existing TravelEdit client.
 	if route != "/myWorkspaceWithList" && route != "/myaddfile" && route != "/myclose" && route != "/myname" && route != "/mysaveworkspace" {
+		unlock()
 		http.Error(w, "This workspace supports task text tabs only", http.StatusForbidden)
 		return
 	}
 	if r.Method != "GET" && r.Method != "POST" || route == "/mysaveworkspace" && r.Method != "POST" {
-		w.Header().Set("Allow", "GET, POST")
+		unlock()
+		allowed := "GET, POST"
+		if route == "/mysaveworkspace" {
+			allowed = "POST"
+		}
+		w.Header().Set("Allow", allowed)
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
 	// Keep an independent rollback copy until atomic persistence succeeds.
-	before, _ := json.Marshal(h.workspaces)
+	before, err := json.Marshal(h.workspaces)
+	if err != nil {
+		unlock()
+		http.Error(w, "Could not snapshot editor state", 500)
+		return
+	}
 	oldCurrent, oldID := h.current, h.nextID
 	rollback := func() { _ = json.Unmarshal(before, &h.workspaces); h.current = oldCurrent; h.nextID = oldID }
-	fail := func(code int, message string) { rollback(); http.Error(w, message, code) }
+	fail := func(code int, message string) { rollback(); unlock(); http.Error(w, message, code) }
 	current := h.workspaces[h.current]
 	var result any
 	newID := 0
@@ -322,7 +352,14 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if result == nil {
 		result = map[string]bool{"ok": true}
 	}
-	_ = json.NewEncoder(w).Encode(result)
+	data, err := json.Marshal(result)
+	if err != nil {
+		unlock()
+		http.Error(w, "Could not encode editor response", 500)
+		return
+	}
+	unlock()
+	_, _ = w.Write(append(data, '\n'))
 }
 
 func (h *Handler) save() error {

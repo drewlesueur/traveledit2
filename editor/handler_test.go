@@ -3,12 +3,14 @@ package editor
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
+	"time"
 )
 
 func request(h *Handler, method, url, body string) *httptest.ResponseRecorder {
@@ -150,5 +152,69 @@ func TestConcurrentInstances(t *testing.T) {
 			}
 			ids[f.ID] = true
 		}
+	}
+}
+
+type blockedResponseWriter struct {
+	header  http.Header
+	entered chan struct{}
+	release chan struct{}
+	once    sync.Once
+}
+
+func (w *blockedResponseWriter) Header() http.Header { return w.header }
+func (w *blockedResponseWriter) WriteHeader(int)     {}
+func (w *blockedResponseWriter) Write(data []byte) (int, error) {
+	w.once.Do(func() { close(w.entered) })
+	<-w.release
+	return len(data), nil
+}
+
+func TestSlowResponseDoesNotHoldStateLock(t *testing.T) {
+	for _, route := range []string{"/editor/", "/editor/myWorkspaceWithList"} {
+		t.Run(route, func(t *testing.T) {
+			h := newTestHandler(t, "")
+			writer := &blockedResponseWriter{header: make(http.Header), entered: make(chan struct{}), release: make(chan struct{})}
+			defer close(writer.release)
+			go h.ServeHTTP(writer, httptest.NewRequest("GET", route, nil))
+			select {
+			case <-writer.entered:
+			case <-time.After(time.Second):
+				t.Fatal("response did not start")
+			}
+			done := make(chan int, 1)
+			go func() { done <- request(h, "GET", "/editor/myaddfile?fileType=devtracker&fullPath=42", "").Code }()
+			select {
+			case status := <-done:
+				if status != 200 {
+					t.Fatalf("mutation status %d", status)
+				}
+			case <-time.After(time.Second):
+				t.Fatal("slow response blocked state mutation")
+			}
+			closed := make(chan struct{})
+			go func() { h.Close(); close(closed) }()
+			select {
+			case <-closed:
+			case <-time.After(time.Second):
+				t.Fatal("slow response blocked Close")
+			}
+		})
+	}
+}
+
+func TestRelativeStatePathIsBoundAtConstruction(t *testing.T) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	target := filepath.Join(t.TempDir(), "workspace.json")
+	relative, err := filepath.Rel(cwd, target)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := newTestHandler(t, relative)
+	if h.config.StateFile != target {
+		t.Fatalf("state path not anchored: %q", h.config.StateFile)
 	}
 }
