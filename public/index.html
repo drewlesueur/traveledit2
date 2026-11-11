@@ -8745,7 +8745,14 @@ function renderInternal() {
             t.fillStyle = "rgba(224, 224, 224, 0.55)"
         }
         // go twice as wide as you need, for server rendering purposes
-        t.fillRect(0, (fx.cursorLineIndex - fx.offsetY) * fontHeight, c.width*3, fontHeight)
+        const controlHighlight = fx.textControls?.highlightAt(fx.cursorLineIndex, fx.cursorColIndex)
+        if (!controlHighlight) {
+            t.fillRect(0, (fx.cursorLineIndex - fx.offsetY) * fontHeight, c.width*3, fontHeight)
+        } else if (controlHighlight.stop > controlHighlight.start) {
+            t.fillRect((controlHighlight.start - fx.offsetX) * fontWidth,
+                (fx.cursorLineIndex - fx.offsetY) * fontHeight,
+                (controlHighlight.stop - controlHighlight.start) * fontWidth, fontHeight)
+        }
 
         // var line = (fx.lines[fx.cursorLineIndex] || "")
         // var [newStartX, adjustment] = skipLeadingSace(line, 0, fx.offsetX, y + fx.offsetY, fx)

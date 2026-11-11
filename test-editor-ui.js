@@ -57,3 +57,23 @@ actions.devTracker.run = () => false;
 actions.saveWrapper();
 assert.deepEqual(commands, ['printf fixture']);
 console.log('Shared TravelEdit task Run routing checks passed');
+
+// Cursor highlighting uses control hit bounds, including horizontal scroll.
+const highlightSource = source.slice(source.indexOf('    // draw line where your cursor is for help with finding'), source.indexOf('    // the selected areas'));
+const rectangles = [];
+const highlighting = {
+  isDark: false, fontWidth: 10, fontHeight: 20, c: { width: 400 },
+  fx: { cursorLineIndex: 6, cursorColIndex: 13, offsetX: 4, offsetY: 2 },
+  t: { fillRect(...rectangle) { rectangles.push(rectangle); } },
+};
+vm.createContext(highlighting);
+vm.runInContext('function drawHighlight() {' + highlightSource + '\n}', highlighting);
+highlighting.drawHighlight();
+assert.deepEqual(rectangles.pop(), [0, 80, 1200, 20], 'normal editor line highlighting is unchanged');
+highlighting.fx.textControls = { highlightAt: () => ({ start: 10, stop: 23 }) };
+highlighting.drawHighlight();
+assert.deepEqual(rectangles.pop(), [60, 80, 130, 20], 'control highlight is limited to the scrolled button');
+highlighting.fx.textControls.highlightAt = () => ({ start: 0, stop: 0 });
+highlighting.drawHighlight();
+assert.equal(rectangles.length, 0, 'control gaps do not highlight the whole row');
+console.log('Shared TravelEdit control-highlight checks passed');

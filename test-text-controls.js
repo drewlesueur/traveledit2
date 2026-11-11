@@ -187,3 +187,13 @@ for (let row = 4; row <= 6; row++) {
 assert.equal(boxedClicks, 3);
 boxedButtons.destroy();
 console.log('Inline TravelEdit boxed-button checks passed');
+
+const highlights = createControls();
+highlights.setContent([highlights.button('Model', () => {}), highlights.button('Interrupt', () => {})], { layout: 'row', style: 'box' });
+highlights.render({ startRow: 5, overlay: true });
+assert.deepEqual(highlights.highlightAt(6, 13), { start: 10, stop: 23 }, 'highlight only the button under the cursor');
+assert.deepEqual(highlights.highlightAt(5, 13), { start: 10, stop: 23 }, 'button borders use the same horizontal bounds');
+assert.deepEqual(highlights.highlightAt(6, 9), { start: 0, stop: 0 }, 'gaps between controls have no line highlight');
+assert.equal(highlights.highlightAt(8, 0), null, 'ordinary text retains its normal line highlight');
+highlights.destroy();
+console.log('Inline TravelEdit control-highlight checks passed');

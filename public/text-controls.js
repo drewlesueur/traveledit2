@@ -153,6 +153,11 @@
       get isOpen() { return stack.length > 0; },
       get focusTarget() { return firstAction; },
       isControlRow(row) { return controlRows.has(row); },
+      highlightAt(row, column) {
+        const region = hit(row, column);
+        if (region) return { start: region.start, stop: region.stop };
+        return controlRows.has(row) ? { start: 0, stop: 0 } : null;
+      },
       capture(row, column) { const region = hit(row, column) || regions.find(region => region.row === row && region.node.type === 'field'); return region ? { node: region.node, fieldLine: region.fieldLine, part: region.part, column: column - region.start } : null; },
       locate(cursor) {
         const region = cursor && regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine && region.part === cursor.part);
