@@ -45,9 +45,15 @@ is read at runtime by the default embedded handler.
 
 Creating a handler does not register global flags, change process cwd or
 environment, bind a socket, or launch an editor process. Ordinary `cmd` requests
-launch shell commands when `EnableEditor` is enabled; closing the handler stops
-its active commands. Leave that option off for hosts that only need task tabs.
-The package and its default assets depend only on the Go standard library.
+launch shell commands when `EnableEditor` is enabled. The xterm button uses
+Bash and the existing `github.com/creack/pty` dependency on Unix. Terminal
+processes belong to the handler: reloads reconnect to them, closing a tab stops
+its terminal, and closing the handler stops and reaps its processes. Saved
+terminal tabs start a new shell on first open after a server restart; constructing
+a handler never launches one. Output polling retains up to 1 MiB per terminal
+and uses the existing single-consumer terminal protocol. Leave `EnableEditor`
+off for hosts that only need task tabs. Windows terminal requests return an
+unsupported-platform error.
 
 The standalone `DEVTRACKER_MODE=1` entry point also uses this package, so its
 workspace behavior and the embedded behavior share one implementation. It

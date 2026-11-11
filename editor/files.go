@@ -28,7 +28,7 @@ func (h *Handler) validFile(f *File) bool {
 	if validTab(f.Type, f.FullPath) {
 		return true
 	}
-	return h.config.EnableEditor && (f.Type == "file" || f.Type == "directory" || f.Type == "shell" || f.Type == "iframe")
+	return h.config.EnableEditor && (f.Type == "file" || f.Type == "directory" || f.Type == "shell" || f.Type == "iframe" || f.Type == "terminal")
 }
 func (h *Handler) file(id int) *File {
 	for _, f := range h.workspaces[h.current].Files {
@@ -49,6 +49,9 @@ func (h *Handler) fullPath(raw string) string {
 }
 func (h *Handler) serveEditor(w http.ResponseWriter, r *http.Request, route string) bool {
 	switch route {
+	case "/myterminalopen", "/myterminalsend", "/myterminalpoll":
+		h.terminal(w, r, route)
+		return true
 	case "/myshell", "/myquickshell":
 		h.shell(w, r, route == "/myquickshell")
 		return true

@@ -74,6 +74,7 @@ type Handler struct {
 	nextID     int
 	closed     bool
 	runs       map[int]*commandRun
+	terminals  map[int]*terminalRun
 }
 
 func New(config Config) (*Handler, error) {
@@ -121,6 +122,7 @@ func New(config Config) (*Handler, error) {
 		script := []byte(`<script src="` + html.EscapeString(config.ScriptURL) + `"></script>`)
 		index = bytes.Replace(index, []byte("</head>"), append(script, []byte("</head>")...), 1)
 	}
+	index = bytes.Replace(index, []byte("</head>"), []byte("<script>window.travelEditEmbedded = true;</script></head>"), 1)
 	h := &Handler{config: config, index: index}
 	if config.StateFile != "" {
 		data, readErr := os.ReadFile(config.StateFile)
@@ -187,6 +189,10 @@ func (h *Handler) Close() error {
 	for _, run := range h.runs {
 		run.cancel()
 		runs = append(runs, run)
+	}
+	for _, terminal := range h.terminals {
+		terminal.stop()
+		runs = append(runs, &commandRun{done: terminal.done})
 	}
 	h.mu.Unlock()
 	timeout := time.NewTimer(2 * time.Second)
@@ -280,6 +286,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	rollback := func() { _ = json.Unmarshal(before, &h.workspaces); h.current = oldCurrent; h.nextID = oldID }
 	fail := func(code int, message string) { rollback(); unlock(); http.Error(w, message, code) }
 	current := h.workspaces[h.current]
+	var terminalToClose *terminalRun
 	var result any
 	newID := 0
 	changed := false
@@ -326,6 +333,9 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			}
 			found = true
 			if route == "/myclose" {
+				if terminal := h.terminals[id]; terminal != nil {
+					terminalToClose = terminal
+				}
 				if run := h.runs[id]; run != nil {
 					run.cancel()
 				}
@@ -406,7 +416,15 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Could not encode editor response", 500)
 		return
 	}
+	if terminalToClose != nil {
+		id, _ := strconv.Atoi(r.FormValue("id"))
+		delete(h.terminals, id)
+	}
 	unlock()
+	if terminalToClose != nil {
+		terminalToClose.stop()
+		<-terminalToClose.done
+	}
 	_, _ = w.Write(append(data, '\n'))
 }
 

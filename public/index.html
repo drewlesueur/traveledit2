@@ -3448,9 +3448,8 @@ function addExistingTerminalTab(id, name, cwd) {
     setCurrentFile(file)
     fx.cursorLineIndex = fx.lines.length - 1
     updateCursorXY()
-    if (!isPollingTerminal) {
-        pollTerminals()
-    }
+    if (window.travelEditEmbedded) openTerminal()
+    else if (!isPollingTerminal) pollTerminals()
     return file
     //theText.focus()
 }
@@ -6404,7 +6403,6 @@ function processPollResponse(wrapperR) {
     for (var id in r) {
         var termInfo = r[id]
         var file = files.find(f => f.ID == id)
-        var lineLengthBeforeChange = file.lines.length
         if (!file) {
             // TODO: this can happen if we get the response for
             // the poll before we even have the ID
@@ -6412,6 +6410,8 @@ function processPollResponse(wrapperR) {
             // but for now we'll ignore them.
             continue
         }
+        var lineLengthBeforeChange = file.lines.length
+        if (window.travelEditEmbedded && termInfo.Closed) file.terminalClosed = true
         if (termInfo.ChatGPTResponses && termInfo.ChatGPTResponses.length) {
             handleChatGPTResponse(file, termInfo.ChatGPTResponses)
         }
@@ -6930,7 +6930,13 @@ function timeWithMillis() {
 }
 var pollId = 0
 function pollTerminals() {
-    if (window.devTracker) return
+    if (window.travelEditEmbedded) {
+        if (pollInFlight) return
+        if (!files.some(f => f.fileMode === "terminal" && f.terminalReady && !f.terminalClosed)) {
+            isPollingTerminal = false
+            return
+        }
+    }
     // log("p: " + timeWithMillis())
     pollId++
     // showLog(true)
@@ -6950,7 +6956,7 @@ function pollTerminals() {
     //     return
     // }
     pollInFlight = true
-    fetch(proxyPath + "/myterminalpoll?clientid=" + clientId, {
+    fetch(proxyPath + "/myterminalpoll?clientid=" + clientId + (window.travelEditEmbedded ? "&ids=" + files.filter(f => f.fileMode === "terminal" && f.terminalReady && !f.terminalClosed).map(f => f.ID).join(",") : ""), {
         cache: "no-cache",
         signal: abortController.signal
     }).then(r => {
@@ -6973,7 +6979,7 @@ function pollTerminals() {
         lastPollError = new Date()
         pollInFlight = false
         render()
-        setTimeout(pollTerminals, 1)
+        setTimeout(pollTerminals, window.travelEditEmbedded ? 1000 : 1)
     })
 }
 
@@ -7015,65 +7021,36 @@ function sendTerminalFile(file, payload) {
     return p
 }
 
-var sendingTerminal = false
-var sendTerminalBuffer = ""
-var sendTerminalCallbacks = []
 function sendTerminal(payload, cb) {
-    if (sendingTerminal) {
-        sendTerminalBuffer += payload
-        sendTerminalCallbacks.push(cb)
-        return
-    }
-    // big TODO (#todoterminal)...  serialize, consider debounce.
-    // make sure we only have one of these going at a time
-    // also, binary payload?
-    sendingTemrinal = true
-    fetch(proxyPath + "/myterminalsend?id=" + fx.ID + "&payload=" + encodeURIComponent(payload), {
-        cache: "no-cache"
-    // }).then(r => {
-    //     return r.json()
-    }).then(r => {
-        sendingTemrinal = false
-        if (sendTerminalBuffer.length) {
-            var tmp = sendTerminalBuffer
-            sendTerminalBuffer = ""
-            sendTerminal(tmp, callAllAndClear(sendTerminalCallbacks))
-        }
-        cb()
-    }).catch(e => {
-        sendingTemrinal = false
-        if (sendTerminalBuffer.length) {
-            var tmp = sendTerminalBuffer
-            sendTerminalBuffer = ""
-            sendTerminal(tmp, callAllAndClear(sendTerminalCallbacks))
-        }
-        cb(e)
-        alert("There was an error sending terminal: " + e)
-    })
+    const file = fx
+    file.terminalSendQueue = (file.terminalSendQueue || Promise.resolve())
+        .then(() => file.terminalLoadPromise)
+        .then(async () => {
+            if (!file.ID) throw new Error("Terminal is not ready")
+            const response = await fetch(proxyPath + "/myterminalsend?id=" + file.ID + "&payload=" + encodeURIComponent(payload), {cache:"no-cache"})
+            if (!response.ok) throw new Error(await response.text())
+        }).then(() => { if (cb) cb() }, error => {
+            if (cb) cb(error)
+            else alert("There was an error sending to the terminal: " + error)
+        })
 }
 function openTerminal() {
-    var resolve; var reject; var p = new Promise(function(res, rej) { resolve = res; reject = res });
-    
-    if (fx.fileMode != "terminal") {
-        return
-    }
-    if (!isPollingTerminal) {
-        pollTerminals()
-    }
-    var myFx = fx // in case the scope changes
-    fetch(proxyPath + "/myterminalopen?cwd="+encodeURIComponent(fx.shellCWD), {
-        cache: "no-cache"
-    }).then(r => {
-        return r.json()
-    }).then(r => {
-        myFx.ID = r.ID
-        resolve()
-    }).catch(e => {
-        alert("There was an error running the command: " + e)
-        reject()
-    })
-    fx.terminalLoadPromise = p
-    
+    const file = fx
+    if (file.fileMode !== "terminal") return Promise.resolve()
+    if (!window.travelEditEmbedded && !isPollingTerminal) pollTerminals()
+    file.terminalLoadPromise = fetch(proxyPath + "/myterminalopen?cwd=" + encodeURIComponent(file.shellCWD || "") + "&id=" + (file.ID || 0), {cache:"no-cache"})
+        .then(async response => {
+            if (!response.ok) throw new Error(await response.text())
+            return response.json()
+        }).then(result => {
+            file.ID = result.ID
+            file.terminalReady = true
+            file.terminalClosed = false
+            if (window.travelEditEmbedded && !isPollingTerminal) pollTerminals()
+        }).catch(error => {
+            alert("There was an error opening the terminal: " + error)
+        })
+    return file.terminalLoadPromise
 }
 // A reload must not race a tab deletion that is still being persisted.
 var pendingTabCloses = new Set()
