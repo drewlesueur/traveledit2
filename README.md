@@ -59,4 +59,5 @@ The default standalone file/terminal mode remains independent of DevTracker.
 
 Run `go test -race ./editor ./public` for package checks and
 `node test-directory-reload.js` for duplicate-directory loading and refresh checks.
+Run `node test-editor-ui.js` for host-control sizing checks.
 The legacy executable's existing example names currently require `go test -vet=off ./...`.

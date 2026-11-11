@@ -5389,6 +5389,9 @@ function setCanvasHeightAccordingly() {
         // statusEl.style.border = "1px solid orange"
         heightReduction = statusElHeight * 3
     }
+    // Canvas dimensions use three units per CSS pixel. Host controls above
+    // the editor occupy layout space only while their task tab is active.
+    heightReduction += (window.devTracker?.controlsHeight?.() || 0) * 3
     // for the ipad, try to use the floating keyboard
 
     if (!floatingKeyboard && (document.activeElement == theText || document.activeElement == searchText || document.activeElement == editorCommandText || document.activeElement == voiceCommandText || window.devTracker?.isComposing())) {
