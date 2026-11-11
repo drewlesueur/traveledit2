@@ -49,7 +49,7 @@
       };
       stack.push(popup); return popup;
     }
-    function render({ startRow = 0, width = 60, viewportStart = 0, viewportRows = 30 } = {}) {
+    function render({ startRow = 0, width = 60, viewportStart = 0, viewportRows = 30, measure = text => Array.from(text).length } = {}) {
       width = Math.max(6, Math.floor(width));
       const lines = [], popup = stack.at(-1);
       regions = []; controlRows = new Set(); firstAction = null;
@@ -75,7 +75,7 @@
             // Editable text uses native editor columns, without box padding.
             const fieldLines = node.value.split('\n');
             fieldLines.forEach((text, fieldLine) => {
-              row(text, node, 0, Math.max(1, Array.from(text).length + 1), popup.disabled);
+              row(text, node, 0, Math.max(1, measure(text) + 1), popup.disabled);
               regions.at(-1).fieldLine = fieldLine;
             });
             continue;
@@ -100,7 +100,7 @@
       get isOpen() { return stack.length > 0; },
       get focusTarget() { return firstAction; },
       isControlRow(row) { return controlRows.has(row); },
-      capture(row, column) { const region = hit(row, column); return region ? { node: region.node, fieldLine: region.fieldLine, column: column - region.start } : null; },
+      capture(row, column) { const region = hit(row, column) || regions.find(region => region.row === row && region.node.type === 'field'); return region ? { node: region.node, fieldLine: region.fieldLine, column: column - region.start } : null; },
       locate(cursor) {
         const region = cursor && regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine);
         return region ? { row: region.row, column: region.start + Math.min(cursor.column, region.stop - region.start - 1) } : null;

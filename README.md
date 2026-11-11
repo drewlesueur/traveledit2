@@ -89,7 +89,9 @@ The native middle-region tap and Enter activate `file.textControls` at the curre
 cursor row and column. A popup can open another popup with `{ parent: tools }`;
 `close()` returns to its parent. `capture()` and `locate()` preserve a control
 cursor when surrounding text moves. Hosts own redraws, editable boundaries, and
-focus/scroll policy; `focusTarget` identifies the first active choice.
+focus/scroll policy; `focusTarget` identifies the first active choice. Pass a
+`measure(text)` callback to `render()` when editor columns use wide characters
+or grapheme clusters, so editable-field cursor positions match the editor.
 `field(label, value, { multiline })` adds editable text rows to a popup. A host can
 use `fieldAt(row)` to find the field and its line index, update its `value`, then
 `refresh()`; `capture()`/`locate()` also preserve cursors in those fields. Field
