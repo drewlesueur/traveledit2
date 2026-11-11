@@ -165,3 +165,25 @@ vm.runInContext(implementation('closeFile'), closeSelection);
 closeSelection.closeFile(inactiveClose);
 assert.deepEqual(closeSelection.files, [activeClose]);
 console.log('Shared TravelEdit inactive-tab close checks passed');
+
+// Desktop edge navigation is available briefly on entry, then yields to keys.
+const edgeTimers = new Map(); let nextEdgeTimer = 0;
+const edgeContext = {
+  surfaceNavigationTimers: new WeakMap(), positionSurfaceNavigation() {},
+  setTimeout(fn, ms) { assert.equal(ms, 1000); edgeTimers.set(++nextEdgeTimer, fn); return nextEdgeTimer; },
+  clearTimeout(id) { edgeTimers.delete(id); },
+};
+vm.createContext(edgeContext);
+vm.runInContext(implementation('showSurfaceNavigation'), edgeContext);
+const desktopEdges = {surfaceNavigation: [{style:{}}, {style:{}}]};
+edgeContext.showSurfaceNavigation(desktopEdges);
+assert.ok(desktopEdges.surfaceNavigation.every(e => e.style.display === 'block'));
+edgeContext.showSurfaceNavigation(desktopEdges, false);
+assert.equal(edgeTimers.size, 0, 'leaving cancels the timer');
+edgeContext.showSurfaceNavigation(desktopEdges);
+assert.equal(edgeTimers.size, 1, 'returning grants a new window');
+[...edgeTimers.values()][0]();
+assert.ok(desktopEdges.surfaceNavigation.every(e => e.style.display === 'none'), 'hidden areas cannot intercept key touches');
+assert.equal(edgeTimers.size, 0);
+edgeContext.showSurfaceNavigation({fileMode:'file'});
+console.log('Desktop transient edge navigation checks passed');

@@ -2142,23 +2142,23 @@ function addIframe(url, id, name, cwd) {
             iframe.style.height = "100%"
             iframeWrapper.style.overflow = "hidden"
             f.fullPath = iframe.src
-            // Temporarily disable desktop level-2 edge navigation while testing the full-width keyboard.
-            // if (!f.surfaceNavigation) {
-            //     f.surfaceNavigation = ["left", "right"].map(side => {
-            //         const edge = document.createElement("div")
-            //         edge.dataset.surfaceNavigation = side
-            //         edge.title = side === "left" ? "Previous tab" : "Next tab"
-            //         const dot = document.createElement("span")
-            //         dot.style.cssText = "position:absolute;left:50%;top:50%;width:6px;height:6px;transform:translate(-50%,-50%);border-radius:50%;background:#999;box-shadow:0 0 0 1px #222;pointer-events:none;"
-            //         edge.appendChild(dot)
-            //         edge.style.cssText = "position:absolute;z-index:2;touch-action:none;"
-            //         edge.addEventListener("touchstart", onStart, {passive: false})
-            //         iframeWrapper.appendChild(edge)
-            //         return edge
-            //     })
-            // }
+            if (!f.surfaceNavigation) {
+                f.surfaceNavigation = ["left", "right"].map(side => {
+                    const edge = document.createElement("div")
+                    edge.dataset.surfaceNavigation = side
+                    edge.title = side === "left" ? "Previous tab" : "Next tab"
+                    const dot = document.createElement("span")
+                    dot.style.cssText = "position:absolute;left:50%;top:50%;width:6px;height:6px;transform:translate(-50%,-50%);border-radius:50%;background:#999;box-shadow:0 0 0 1px #222;pointer-events:none;"
+                    edge.appendChild(dot)
+                    edge.style.cssText = "position:absolute;z-index:2;touch-action:none;"
+                    edge.addEventListener("touchstart", onStart, {passive: false})
+                    iframeWrapper.appendChild(edge)
+                    return edge
+                })
+            }
             setCanvasHeightAccordingly()
             f.surface.activate(fx === f)
+            showSurfaceNavigation(f, fx === f)
             if (f.ID && files.includes(f)) saveWorkspace()
             return
         }
@@ -5407,6 +5407,18 @@ $b is $a and $c === $d
 number is -34.2 and 400.123 === forever young
 */
 
+
+const surfaceNavigationTimers = new WeakMap()
+function showSurfaceNavigation(file, visible = true) {
+    if (!file?.surfaceNavigation) return
+    clearTimeout(surfaceNavigationTimers.get(file))
+    surfaceNavigationTimers.delete(file)
+    for (const edge of file.surfaceNavigation) edge.style.display = visible ? "block" : "none"
+    if (visible) {
+        positionSurfaceNavigation(file)
+        surfaceNavigationTimers.set(file, setTimeout(() => showSurfaceNavigation(file, false), 1000))
+    }
+}
 
 // Keep native level-2 tab navigation above full-height remote surfaces.
 function positionSurfaceNavigation(file) {
@@ -12828,10 +12840,12 @@ function setCurrentFile(file) {
     }
     if (lastFile && lastFile !== fx && lastFile.iframe) {
         lastFile.surface?.activate(false)
+        showSurfaceNavigation(lastFile, false)
         lastFile.iframeWrapper.style.display = "none"
     }
     fx.surface?.activate(true)
     setCanvasHeightAccordingly()
+    showSurfaceNavigation(fx)
     updateCursorXY()
     ensureCursorInScreen()
     searchText.setAttribute("placeholder", fx.fullPath + " (search)")
