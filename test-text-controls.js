@@ -50,7 +50,8 @@ ui.destroy(); assert.deepEqual(ui.render().lines, []);
 second.destroy();
 console.log('Inline TravelEdit text-control checks passed');
 
-const form = createControls();
+let activatedField;
+const form = createControls({ onFieldActivate(target) { activatedField = target; } });
 const popup = form.open('Editable settings');
 const instructions = popup.field('Instructions', 'first\nsecond', { multiline: true });
 popup.field('Limit', '5');
@@ -63,6 +64,12 @@ assert.equal(form.fieldAt(firstRow).start, 2, 'outline is excluded from editable
 assert.equal(form.fieldAt(firstRow + 1).fieldLine, 1);
 assert.equal(form.activate(firstRow, 2), false, 'field taps enter native editing');
 assert.equal(form.isOpen, true);
+assert.equal(form.activate(firstRow, 40), true, 'blank input area enters editing');
+assert.deepEqual(activatedField, { row: firstRow, column: 7 }, 'blank area selects end of text');
+assert.equal(form.activate(firstRow - 1, 1), true, 'top border enters editing');
+assert.deepEqual(activatedField, { row: firstRow, column: 2 });
+assert.equal(form.activate(firstRow + 2, 40), true, 'bottom border enters editing');
+assert.deepEqual(activatedField, { row: firstRow + 1, column: 8 });
 const fieldCursor = form.capture(firstRow + 1, 3);
 form.render({ startRow: 20 });
 assert.deepEqual(form.locate(fieldCursor), { row: firstRow + 11, column: 3 });

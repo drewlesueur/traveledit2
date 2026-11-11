@@ -47,8 +47,9 @@
     if (arms & 8) fill(left, centerY, centerX - left, stroke);
     return true;
   }
-  function createControls({ onChange = () => {}, onClose = () => {} } = {}) {
+  function createControls({ onChange = () => {}, onClose = () => {}, onFieldActivate = () => {} } = {}) {
     let content = [], rootLayout = 'column', buttonStyle = 'plain', stack = [], regions = [], controlRows = new Set(), firstAction = null, activating = null;
+    let fieldBoxes = [];
     const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
     function refresh({ focus = false } = {}) { onChange({ focus }); }
     function closeAll({ focus = false } = {}) {
@@ -99,7 +100,7 @@
       width = Math.max(6, Math.floor(width));
       const lines = [], popup = stack.at(-1);
       let rowOrigin = startRow, columnOrigin = 0;
-      regions = []; controlRows = new Set(); firstAction = null;
+      regions = []; fieldBoxes = []; controlRows = new Set(); firstAction = null;
       const clip = (text, length) => {
         const chars = Array.from(String(typeof text === 'function' ? text() : text));
         return chars.length > length ? chars.slice(0, Math.max(0, length - 1)).join('') + '…' : chars.join('');
@@ -152,6 +153,7 @@
           if (node.type === 'field') {
             // Keep the field outline separate from the editable text coordinates.
             const fieldWidth = inner - 2;
+            const top = rowOrigin + lines.length;
             row('│┌' + '─'.repeat(fieldWidth) + '┐│');
             const fieldLines = node.value.split('\n');
             fieldLines.forEach((text, fieldLine) => {
@@ -159,6 +161,7 @@
               regions.at(-1).fieldLine = fieldLine;
             });
             row('│└' + '─'.repeat(fieldWidth) + '┘│');
+            fieldBoxes.push({ node, top, bottom: rowOrigin + lines.length - 1, start: columnOrigin + 1, stop: columnOrigin + inner + 1, disabled: popup.disabled });
             continue;
           }
           const text = clip(node.type === 'button' ? node.label : node.text, inner);
@@ -213,6 +216,16 @@
       },
       fieldAt(row) { return regions.find(region => region.row === row && region.node.type === 'field' && !region.disabled) || null; },
       activate(row, column) {
+        const box = fieldBoxes.find(box => row >= box.top && row <= box.bottom && column >= box.start && column < box.stop);
+        if (box) {
+          if (box.disabled) return true;
+          const targetRow = Math.max(box.top + 1, Math.min(row, box.bottom - 1));
+          const field = regions.find(region => region.node === box.node && region.row === targetRow);
+          const targetColumn = Math.max(field.start, Math.min(column, field.stop - 1));
+          const redirected = targetRow !== row || targetColumn !== column;
+          if (redirected) onFieldActivate({ row: targetRow, column: targetColumn });
+          return redirected;
+        }
         const region = hit(row, column);
         if (region?.node.type === 'field') return false;
         if (region) {
@@ -229,7 +242,7 @@
         if (stack.length) { closeAll(); return true; }
         return false;
       },
-      destroy() { closeAll(); content = []; regions = []; controlRows.clear(); }
+      destroy() { closeAll(); content = []; regions = []; fieldBoxes = []; controlRows.clear(); }
     };
   }
   // A DOM surface for the same declarative popup API used by text controls.
