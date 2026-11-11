@@ -49,21 +49,26 @@
   }
   // Visual field chrome only: the host retains its native text/editing model.
   function drawTextInput(context, { x, y, columns, rows, cellWidth, cellHeight, baseline, font,
-    viewportWidth = Infinity, viewportHeight = Infinity, label = 'Reply', placeholder = '', borderColor = 'deepskyblue', textColor = 'gray', stroke = 1 }) {
+    viewportWidth = Infinity, viewportHeight = Infinity, label = 'Reply', placeholder = '', borderColor = 'deepskyblue', textColor = 'gray', labelColor = textColor, stroke = 1 }) {
     const oldFill = context.fillStyle, oldFont = context.font, oldBaseline = context.textBaseline;
     context.fillStyle = borderColor;
     columns = Math.max(4, columns); rows = Math.max(3, rows);
-    const title = (' ' + label + ' ').slice(0, columns - 2);
+    const title = Array.from('─ ' + label + ' ').slice(0, columns - 2);
     const cell = (char, col, row) => drawBoxCharacter(context, char, x + col * cellWidth, y + row * cellHeight, cellWidth, cellHeight, stroke);
     cell('┌', 0, 0); cell('┐', columns - 1, 0);
     cell('└', 0, rows - 1); cell('┘', columns - 1, rows - 1);
     for (let col = Math.max(1, Math.floor(-x / cellWidth)); col < Math.min(columns - 1, Math.ceil((viewportWidth - x) / cellWidth)); col++) {
-      if (col > title.length) cell('─', col, 0);
+      const char = title[col - 1] || '─';
+      if (isBoxCharacter(char)) cell(char, col, 0);
+      else {
+        context.font = font; context.textBaseline = 'top'; context.fillStyle = labelColor;
+        context.fillText(char, x + col * cellWidth, y + baseline);
+        context.fillStyle = borderColor;
+      }
       cell('─', col, rows - 1);
     }
     for (let row = Math.max(1, Math.floor(-y / cellHeight)); row < Math.min(rows - 1, Math.ceil((viewportHeight - y) / cellHeight)); row++) { cell('│', 0, row); cell('│', columns - 1, row); }
     context.font = font; context.fillStyle = textColor; context.textBaseline = 'top';
-    context.fillText(title, x + cellWidth, y + baseline);
     if (placeholder) context.fillText(placeholder.slice(0, columns - 2), x + cellWidth, y + cellHeight + baseline);
     context.fillStyle = oldFill; context.font = oldFont; context.textBaseline = oldBaseline;
   }

@@ -8765,7 +8765,7 @@ function renderInternal() {
     
     if (window.devTracker?.drawDraftControl) devTracker.drawDraftControl(t, fx, {
         cellWidth: fontWidth, cellHeight: fontHeight, baseline: fontOffsetY,
-        font: fontCSS, stroke: boxStrokeWidth, dark: isDark, viewportWidth: c.width, viewportHeight: maxLines * fontHeight
+        font: fontCSS, labelColor: fontColor, stroke: boxStrokeWidth, dark: isDark, viewportWidth: c.width, viewportHeight: maxLines * fontHeight
     })
     // draw line where your cursor is for help with finding
     var underlineOffset = (fontHeight) - (1/6/2 * fontHeight)
