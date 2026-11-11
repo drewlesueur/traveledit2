@@ -220,3 +220,25 @@ func TestRelativeStatePathIsBoundAtConstruction(t *testing.T) {
 		t.Fatalf("state path not anchored: %q", h.config.StateFile)
 	}
 }
+
+func TestDiffTabPersistence(t *testing.T) {
+	state := filepath.Join(t.TempDir(), "workspace.json")
+	h := newTestHandler(t, state)
+	if w := request(h, "GET", "/editor/myaddfile?fileType=devtracker-diff&fullPath=42", ""); w.Code != 200 {
+		t.Fatal(w.Body.String())
+	}
+	restored := newTestHandler(t, state)
+	tabs := snapshot(t, restored).Files
+	if len(tabs) != 2 || tabs[1].Type != "devtracker-diff" || tabs[1].FullPath != "42" {
+		t.Fatalf("diff tab not restored: %+v", tabs)
+	}
+	other := newTestHandler(t, filepath.Join(t.TempDir(), "other.json"))
+	if len(snapshot(t, other).Files) != 1 {
+		t.Fatal("diff tab leaked between users")
+	}
+	for _, id := range []string{"0", "-1", "file.txt"} {
+		if w := request(h, "GET", "/editor/myaddfile?fileType=devtracker-diff&fullPath="+id, ""); w.Code == 200 {
+			t.Fatalf("accepted invalid task ID %s", id)
+		}
+	}
+}

@@ -7056,7 +7056,7 @@ function openTerminal() {
 var pendingTabCloses = new Set()
 function closeFileServer(theFile) {
     theFile = theFile || fx
-    const closing = window.devTracker && theFile?.fileMode == "devtracker"
+    const closing = window.devTracker && ["devtracker", "devtracker-diff"].includes(theFile?.fileMode)
         ? devTracker.closeFile(theFile)
         : Promise.resolve(theFile.iframeRegistration).then(() => fetch(proxyPath + "/myclose?id=" + theFile.ID, { cache: "no-cache" })).then(response => {
             if (!response.ok) throw new Error("Could not close saved tab (" + response.status + ")")
@@ -13112,7 +13112,7 @@ function fetchWorkspaceWithList(index) {
         for (var serverFile of workspace.Files) {
             // TODO: fix inconsistent file naming #inconsistentFileNaming
             var f
-            if (window.devTracker && serverFile.Type == "devtracker") {
+            if (window.devTracker && ["devtracker", "devtracker-diff"].includes(serverFile.Type)) {
                 f = devTracker.restore(serverFile)
             } else if (serverFile.Type == "terminal") {
                 f = addExistingTerminalTab(serverFile.ID, serverFile.Name, serverFile.CWD)
