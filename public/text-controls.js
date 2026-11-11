@@ -18,7 +18,7 @@
     const fill = (a, b, w, h) => { if (w > 0 && h > 0) context.fillRect(a, b, w, h); };
     const arms = boxArms[char];
     if ([6, 12, 3, 9].includes(arms)) {
-      const radius = Math.min(Math.round(Math.min(right - left, bottom - top) * 0.45),
+      const radius = Math.min(Math.round(Math.min(right - left, bottom - top) * 0.55),
         right - centerX, centerX + stroke - left, bottom - centerY, centerY + stroke - top);
       if (radius > stroke) {
         const east = !!(arms & 2), south = !!(arms & 4);
