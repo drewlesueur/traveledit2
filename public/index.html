@@ -8760,6 +8760,11 @@ function renderInternal() {
             fx.iframeCursorY = Math.max(0, Math.min(fx.iframeWrapper.clientHeight - 1, fx.iframeCursorY))
             fx.surface.move(fx.iframeCursorX, fx.iframeCursorY)
         }
+        iframeCursor.style.borderColor = fx.surface?.cursorColor || "black"
+        iframeCursor.style.borderWidth = fx.surface?.cursorColor ? "2px" : "1px"
+        iframeCursor.style.backgroundColor = fx.surface?.cursorColor ? "transparent" : "white"
+        iframeCursor.style.borderRadius = fx.surface?.cursorColor ? "50%" : "5px"
+        iframeCursor.style.boxSizing = fx.surface?.cursorColor ? "border-box" : "content-box"
         iframeCursor.style.top = (fx.iframeCursorY-5) + "px"
         // iframeCursor.style.left = ((navTouchSize) +fx.iframeCursorX-5) + "px"
         iframeCursor.style.left = (fx.iframeCursorX-5) + "px"
