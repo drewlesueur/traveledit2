@@ -9406,7 +9406,7 @@ function renderInternal() {
                 t.fillStyle = "teal"
                 t.fillText("•", x*fontWidth, y*fontHeight + fontOffsetY)
             } else if (window.TravelEditUI?.isBoxCharacter(chr)) {
-                t.fillStyle = "deepskyblue"
+                t.fillStyle = window.devTracker?.specialColor ? devTracker.specialColor(fx) : "deepskyblue"
                 TravelEditUI.drawBoxCharacter(t, chr, x*fontWidth, y*fontHeight, fontWidth, fontHeight, boxStrokeWidth)
             } else if (chr > "\xff") {
                 t.fillStyle = window.devTracker?.color ? devTracker.color(fx, theIndex, x + fx.offsetX, "deepskyblue", isDark) : "deepskyblue"
