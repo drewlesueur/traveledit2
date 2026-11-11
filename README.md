@@ -119,3 +119,9 @@ Unicode. `minimumStroke` lets a scaled canvas keep lines at least one CSS pixel
 thick; the native editor supplies its backing-to-display ratio. Other characters
 continue through the selected font. Run `node test-box-drawing.js` to check joins,
 corner directions, and scaling without a browser.
+
+The embedded DevTracker adapter can use the hidden `devTrackerToolbar` native
+row. Its seven default slots are status, interrupt, voice, bot settings, diff
+review, send, and accept; actions delegate to `devTracker.toolbarAction`. The
+adapter controls visibility and accounts for its height alongside host controls.
+Standalone file and cmd toolbars keep their existing actions.

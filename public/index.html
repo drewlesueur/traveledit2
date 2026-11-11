@@ -202,6 +202,14 @@ body.light .toolbar div.selected {
 
 
 
+#devTrackerToolbar .middleButton {
+    flex: 1 1 0;
+    min-width: 0;
+    width: auto;
+}
+#devTrackerToolbar [data-task-action="status"] { flex: 0 0 38px; font-size: 10px; }
+#devTrackerToolbar [aria-disabled="true"] { opacity: 0.45; }
+
 .toolbar .slotButton {
     overflow: hidden;
 }
@@ -374,6 +382,15 @@ They get changed later on.
     </div>
 </div>
 <div class="toolbar xhidden" id=fileRow onclick=selectFileRow(event)>
+</div>
+<div class="toolbar hidden" id="devTrackerToolbar" aria-label="DevTracker task controls">
+    <div class="middleButton" data-task-action="status" onclick="window.devTracker?.toolbarAction('status')">Idle</div>
+    <div class="middleButton" data-task-action="interrupt" onclick="window.devTracker?.toolbarAction('interrupt')">Interrupt</div>
+    <div class="middleButton" data-task-action="voice" onclick="window.devTracker?.toolbarAction('voice')">Voice</div>
+    <div class="middleButton" data-task-action="settings" onclick="window.devTracker?.toolbarAction('settings')">Bot settings</div>
+    <div class="middleButton" data-task-action="diff" onclick="window.devTracker?.toolbarAction('diff')">Diff Good?</div>
+    <div class="middleButton" data-task-action="send" onclick="window.devTracker?.toolbarAction('send')">Send</div>
+    <div class="middleButton" data-task-action="accept" onclick="window.devTracker?.toolbarAction('accept')">Accept</div>
 </div>
 <div class="toolbar hidden" id=fileToolbar1 style="--display: none">
     <!--

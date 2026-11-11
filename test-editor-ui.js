@@ -77,3 +77,9 @@ highlighting.fx.textControls.highlightAt = () => ({ start: 0, stop: 0 });
 highlighting.drawHighlight();
 assert.equal(rectangles.length, 0, 'control gaps do not highlight the whole row');
 console.log('Shared TravelEdit control-highlight checks passed');
+
+const taskToolbarMarkup = source.slice(source.indexOf('id="devTrackerToolbar"'), source.indexOf('id=fileToolbar1'));
+const taskToolbarActions = [...taskToolbarMarkup.matchAll(/data-task-action="([^"]+)"/g)].map(match => match[1]);
+assert.deepEqual(taskToolbarActions, ['status', 'interrupt', 'voice', 'settings', 'diff', 'send', 'accept']);
+assert.match(taskToolbarMarkup, /data-task-action="send"[^>]*>Send</);
+console.log('Shared TravelEdit task-toolbar layout checks passed');
