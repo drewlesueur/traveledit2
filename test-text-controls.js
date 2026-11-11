@@ -171,3 +171,19 @@ assert.equal(shifted.fieldAt(fieldRow).start, 50, 'field input follows horizonta
 assert.equal(shifted.locate(shifted.capture(fieldRow, 52)).column, 52);
 shifted.destroy();
 console.log('Inline TravelEdit popup-toggle checks passed');
+
+const boxedButtons = createControls();
+let boxedClicks = 0;
+const boxedButton = boxedButtons.button('Run', () => { boxedClicks++; });
+boxedButtons.setContent([boxedButton, boxedButtons.button('Interrupt', () => {})], { layout: 'row', style: 'box' });
+const boxedRows = boxedButtons.render({ width: 8, startRow: 4, overlay: true }).lines;
+assert.deepEqual(boxedRows, ['┌─────┐ ┌───────────┐', '│ Run │ │ Interrupt │', '└─────┘ └───────────┘']);
+for (let row = 4; row <= 6; row++) {
+  const cursor = boxedButtons.capture(row, 2);
+  boxedButtons.activate(row, 2);
+  boxedButtons.render({ width: 8, startRow: 4, overlay: true });
+  assert.deepEqual(boxedButtons.locate(cursor), { row, column: 2 }, 'border and label cursors stay on their original row');
+}
+assert.equal(boxedClicks, 3);
+boxedButtons.destroy();
+console.log('Inline TravelEdit boxed-button checks passed');

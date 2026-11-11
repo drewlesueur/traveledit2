@@ -3,7 +3,7 @@
 (function (host) {
   'use strict';
   function createControls({ onChange = () => {}, onClose = () => {} } = {}) {
-    let content = [], rootLayout = 'column', stack = [], regions = [], controlRows = new Set(), firstAction = null, activating = null;
+    let content = [], rootLayout = 'column', buttonStyle = 'plain', stack = [], regions = [], controlRows = new Set(), firstAction = null, activating = null;
     const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
     function refresh({ focus = false } = {}) { onChange({ focus }); }
     function closeAll({ focus = false } = {}) {
@@ -64,6 +64,23 @@
         if (node?.type === 'button' || node?.type === 'field') regions.push({ row: index, start: start + columnOrigin, stop: stop + columnOrigin, node, text, disabled: disabled || node.disabled });
       }
       function roots() {
+        if (rootLayout === 'row' && buttonStyle === 'box' && content.length) {
+          const cells = content.map(node => {
+            const value = node.type === 'button' ? node.label : node.text;
+            const label = String(typeof value === 'function' ? value() : value);
+            return { node, width: measure(label) + 4, lines: ['┌' + '─'.repeat(measure(label) + 2) + '┐', '│ ' + label + ' │', '└' + '─'.repeat(measure(label) + 2) + '┘'] };
+          });
+          for (let part = 0; part < 3; part++) {
+            const index = startRow + lines.length;
+            let offset = 0;
+            for (const cell of cells) {
+              if (cell.node.type === 'button') regions.push({ row: index, start: offset, stop: offset + cell.width, node: cell.node, part, disabled: cell.node.disabled });
+              offset += cell.width + 1;
+            }
+            row(cells.map(cell => cell.lines[part]).join(' '));
+          }
+          return;
+        }
         if (rootLayout === 'row' && content.length) {
           const index = startRow + lines.length;
           let text = '';
@@ -103,7 +120,7 @@
       }
       // Insert the popup above its trigger when there is less room below it.
       const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length : 1), 3) : 0;
-      const above = popup && startRow + (rootLayout === 'row' ? Math.min(1, content.length) : content.length) + boxHeight >= viewportStart + viewportRows;
+      const above = popup && startRow + (rootLayout === 'row' ? Math.min(1, content.length) * (buttonStyle === 'box' ? 3 : 1) : content.length) + boxHeight >= viewportStart + viewportRows;
       let floating = null;
       if (overlay) {
         roots();
@@ -132,13 +149,13 @@
     function hit(row, column) { return regions.find(region => region.row === row && column >= region.start && column < region.stop); }
     return {
       button, open, refresh, closeAll, render,
-      setContent(nodes, { layout = 'column' } = {}) { content = nodes; rootLayout = layout; },
+      setContent(nodes, { layout = 'column', style = 'plain' } = {}) { content = nodes; rootLayout = layout; buttonStyle = style; },
       get isOpen() { return stack.length > 0; },
       get focusTarget() { return firstAction; },
       isControlRow(row) { return controlRows.has(row); },
-      capture(row, column) { const region = hit(row, column) || regions.find(region => region.row === row && region.node.type === 'field'); return region ? { node: region.node, fieldLine: region.fieldLine, column: column - region.start } : null; },
+      capture(row, column) { const region = hit(row, column) || regions.find(region => region.row === row && region.node.type === 'field'); return region ? { node: region.node, fieldLine: region.fieldLine, part: region.part, column: column - region.start } : null; },
       locate(cursor) {
-        const region = cursor && regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine);
+        const region = cursor && regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine && region.part === cursor.part);
         return region ? { row: region.row, column: region.start + Math.min(cursor.column, region.stop - region.start - 1) } : null;
       },
       fieldAt(row) { return regions.find(region => region.row === row && region.node.type === 'field' && !region.disabled) || null; },

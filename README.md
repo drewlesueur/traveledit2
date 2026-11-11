@@ -86,7 +86,8 @@ const result = controls.render({ startRow, width, viewportStart, viewportRows })
 ```
 
 Pass `{ layout: 'row' }` as the second argument to `setContent` to place the
-main controls on a single unwrapped, unclipped line. The editor supplies horizontal
+main controls on a single unwrapped, unclipped line. Add `style: 'box'` to give
+each button a three-line Unicode border; all three lines activate the button. The editor supplies horizontal
 scrolling; popup choices keep their vertical layout. With `render({ overlay: true,
 ... })`, `lines` contains only those root controls and `overlay` describes the
 popup's independent `{ row, column, lines }` rectangle. Hit regions use the popup's
