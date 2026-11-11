@@ -283,8 +283,8 @@ assert.equal(nearBottom.overlay.row + nearBottom.overlay.lines.length, speedRow,
 retained.destroy();
 console.log('Inline TravelEdit retained-parent popover checks passed');
 
-const inputContext = { fillStyle: 'original', font: 'original', rectangles: 0, labels: [],
-  fillRect() { this.rectangles++; }, fillText(text) { this.labels.push(text); } };
+const inputContext = { fillStyle: 'original', font: 'original', textBaseline: 'alphabetic', rectangles: 0, labels: [],
+  fillRect() { this.rectangles++; }, fillText(text) { assert.equal(this.textBaseline, 'top'); this.labels.push(text); } };
 require('./public/text-controls.js').drawTextInput(inputContext, {
   x: 0, y: -16000, columns: 10000, rows: 10000, cellWidth: 8, cellHeight: 16,
   baseline: 12, font: 'mono', viewportWidth: 390, viewportHeight: 800, placeholder: 'Type here'
@@ -292,4 +292,5 @@ require('./public/text-controls.js').drawTextInput(inputContext, {
 assert.ok(inputContext.rectangles < 1000, 'input borders only iterate visible rows and columns');
 assert.equal(inputContext.fillStyle, 'original');
 assert.equal(inputContext.font, 'original');
+assert.equal(inputContext.textBaseline, 'alphabetic', 'field rendering restores the previous canvas baseline');
 console.log('TravelEdit text input outline checks passed');

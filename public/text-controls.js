@@ -50,7 +50,7 @@
   // Visual field chrome only: the host retains its native text/editing model.
   function drawTextInput(context, { x, y, columns, rows, cellWidth, cellHeight, baseline, font,
     viewportWidth = Infinity, viewportHeight = Infinity, label = 'Reply', placeholder = '', borderColor = 'deepskyblue', textColor = 'gray', stroke = 1 }) {
-    const oldFill = context.fillStyle, oldFont = context.font;
+    const oldFill = context.fillStyle, oldFont = context.font, oldBaseline = context.textBaseline;
     context.fillStyle = borderColor;
     columns = Math.max(4, columns); rows = Math.max(3, rows);
     const title = (' ' + label + ' ').slice(0, columns - 2);
@@ -62,10 +62,10 @@
       cell('─', col, rows - 1);
     }
     for (let row = Math.max(1, Math.floor(-y / cellHeight)); row < Math.min(rows - 1, Math.ceil((viewportHeight - y) / cellHeight)); row++) { cell('│', 0, row); cell('│', columns - 1, row); }
-    context.font = font; context.fillStyle = textColor;
+    context.font = font; context.fillStyle = textColor; context.textBaseline = 'top';
     context.fillText(title, x + cellWidth, y + baseline);
     if (placeholder) context.fillText(placeholder.slice(0, columns - 2), x + cellWidth, y + cellHeight + baseline);
-    context.fillStyle = oldFill; context.font = oldFont;
+    context.fillStyle = oldFill; context.font = oldFont; context.textBaseline = oldBaseline;
   }
   function selectControl(popup, open, refresh, label, options, value, change) {
     const choices = options.map(option => typeof option === 'string' ? { value: option, label: option } : option);
