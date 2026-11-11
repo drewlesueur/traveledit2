@@ -2133,6 +2133,11 @@ function addIframe(url, id, name, cwd) {
         // Optional same-origin remote surface: native cursor gestures drive it.
         f.surface = iframe.contentWindow.travelEditSurface
         if (f.surface) {
+            f.surface.onPointerMove = function(position) {
+                f.iframeCursorX = position.x
+                f.iframeCursorY = position.y
+                if (fx === f) render()
+            }
             iframe.style.width = "100%"
             iframe.style.height = "100%"
             iframeWrapper.style.overflow = "hidden"
