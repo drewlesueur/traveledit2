@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -144,6 +145,11 @@ func (h *Handler) shell(w http.ResponseWriter, r *http.Request, quick bool) {
 	h.runs[id] = run
 	h.mu.Unlock()
 	output, runErr := cmd.CombinedOutput()
+	// WaitDelay means the shell exited but a child still holds an output pipe.
+	// CommandContext no longer calls Cancel after the shell has exited.
+	if errors.Is(runErr, exec.ErrWaitDelay) {
+		_ = cmd.Cancel()
+	}
 	close(run.done)
 	h.mu.Lock()
 	if h.runs[id] != run {
@@ -191,34 +197,48 @@ func (h *Handler) saveLoad(w http.ResponseWriter, r *http.Request) {
 	}
 	target := h.fullPath(raw)
 	if r.Method == "POST" {
+		// Serialize the checksum read and write so two saves cannot both accept
+		// the same old version and silently overwrite each other.
+		h.mu.Lock()
+		locked := true
+		defer func() {
+			if locked {
+				h.mu.Unlock()
+			}
+		}()
+		fail := func(message string, code int) {
+			h.mu.Unlock()
+			locked = false
+			http.Error(w, message, code)
+		}
+		if h.closed {
+			fail("Editor closed", 503)
+			return
+		}
 		content := r.FormValue("content")
 		diff := r.FormValue("diff")
 		if diff != "" && r.FormValue("oldmd5") != "" && r.FormValue("newmd5") != "" {
 			old, err := os.ReadFile(target)
 			if err != nil {
-				http.Error(w, "Could not read file", 400)
+				fail("Could not read file", 400)
 				return
 			}
 			if hash(old) != r.FormValue("oldmd5") {
-				http.Error(w, "File changed since it was loaded", 409)
+				fail("File changed since it was loaded", 409)
 				return
 			}
 			content, err = ApplyDiff(string(old), diff)
 			if err != nil || hash([]byte(content)) != r.FormValue("newmd5") {
-				http.Error(w, "File diff checksum mismatch", 400)
+				fail("File diff checksum mismatch", 400)
 				return
 			}
 		} else if content == "" {
-			http.Error(w, "Empty content", 400)
-			return
-		}
-		h.mu.Lock()
-		defer h.mu.Unlock()
-		if h.closed {
-			http.Error(w, "Editor closed", 503)
+			fail("Empty content", 400)
 			return
 		}
 		err := os.WriteFile(target, []byte(content), 0644)
+		h.mu.Unlock()
+		locked = false
 		w.Header().Set("Content-Type", "application/json")
 		response := map[string]any{"saved": err == nil}
 		if err != nil {
