@@ -69,7 +69,7 @@
         button(label, action, options) { const node = button(label, action, options); popup.items.push(node); return node; },
         field(label, value, options = {}) {
           popup.note(label);
-          const node = { type: 'field', value: String(value ?? ''), multiline: !!options.multiline };
+          const node = { type: 'field', value: String(value ?? ''), multiline: !!options.multiline, onInput: options.onInput, onBlur: options.onBlur };
           popup.items.push(node); return node;
         },
         note(text) { const node = { type: 'text', text }; popup.items.push(node); return node; },
@@ -285,6 +285,7 @@
           if (node.type === 'field') {
             el.rows = node.multiline ? 3 : 1; el.setAttribute('aria-label', node.label);
             el.addEventListener('input', () => { node.value = el.value; node.onInput?.(node.value); });
+            el.addEventListener('blur', () => node.onBlur?.());
           }
           elements.set(node, el);
         }
@@ -316,7 +317,7 @@
         button(label, action, options) { const node = button(label, action, options); popup.items.push(node); return node; },
         note(text) { const node = { type: 'text', text }; popup.items.push(node); return node; },
         field(label, value, options = {}) {
-          popup.note(label); const node = { type: 'field', label, value: String(value ?? ''), multiline: !!options.multiline, onInput: options.onInput };
+          popup.note(label); const node = { type: 'field', label, value: String(value ?? ''), multiline: !!options.multiline, onInput: options.onInput, onBlur: options.onBlur };
           popup.items.push(node); return node;
         },
         radioGroup(label, options, value, change) {
