@@ -100,3 +100,58 @@ assert.equal(resizing.result, 1710, 'native cmd resize keeps its existing height
 resizing.fx = undefined; resizing.doSizing();
 assert.equal(resizing.result, 1710, 'initial sizing works before a tab exists');
 console.log('Shared TravelEdit task resize checks passed');
+
+(async () => {
+  let finishClose;
+  const events = [];
+  const closing = {
+    pendingTabCloses: new Set(), files: [], fx: { fileMode: 'devtracker', ID: 17 },
+    devTracker: { closeFile() { return new Promise(resolve => { finishClose = resolve; }); } },
+    saveWorkspace() { events.push('save'); return Promise.resolve(); },
+    addParamToCurrentURL() { return '/reloaded'; }, location: {}, alert(message) { events.push(message); },
+  };
+  closing.window = closing;
+  vm.createContext(closing);
+  for (const name of ['closeFileServer', 'doRefresh']) vm.runInContext(implementation(name), closing);
+  const pending = closing.closeFileServer();
+  const refreshed = closing.doRefresh();
+  await Promise.resolve();
+  assert.deepEqual(events, [], 'refresh must wait for the server close');
+  assert.equal(closing.location.href, undefined);
+  finishClose(); await pending; await refreshed;
+  assert.deepEqual(events, ['save']);
+  assert.equal(closing.location.href, '/reloaded');
+  assert.equal(closing.pendingTabCloses.size, 0);
+  closing.devTracker.closeFile = () => Promise.reject(new Error('fixture close failed'));
+  await assert.rejects(closing.closeFileServer(), /fixture close failed/);
+  closing.location.href = '';
+  await closing.doRefresh();
+  assert.equal(events.filter(event => event === 'save').length, 1, 'failed close must block reload and save');
+  assert.equal(closing.location.href, '');
+  console.log('Shared TravelEdit close-before-refresh checks passed');
+})().catch(error => { console.error(error); process.exitCode = 1; });
+
+// Restoring the saved active index must not invoke the interactive duplicate gesture.
+const restoreSelection = source.match(/if \(ust.has\("fileIndex"\)\) \{([\s\S]*?)\n        \}/)[1];
+const restoreTabs = { files: [{ ID: 1 }, { ID: 2 }], ust: new URLSearchParams('fileIndex=1'), selected: [] };
+restoreTabs.fx = restoreTabs.files[1];
+restoreTabs.selectFileIndex = index => restoreTabs.selected.push(index);
+vm.createContext(restoreTabs);
+vm.runInContext(restoreSelection, restoreTabs);
+assert.deepEqual(restoreTabs.selected, [], 'already-selected tab is not selected again on reload');
+restoreTabs.fx = restoreTabs.files[0];
+vm.runInContext(restoreSelection, restoreTabs);
+assert.deepEqual(restoreTabs.selected, ['1'], 'a different saved active tab is still selected');
+console.log('Shared TravelEdit active-tab restore checks passed');
+
+const activeClose = { ID: 1, fileMode: 'devtracker' }, inactiveClose = { ID: 2, fileMode: 'devtracker' };
+const closeSelection = {
+  files: [activeClose, inactiveClose], fx: activeClose,
+  selectFileIndex() { throw new Error('closing another tab must not reselect and duplicate the active tab'); },
+  render() {}, renderFileDropdown() {}, closeFileServer() { return Promise.resolve(); }, alert() {},
+};
+vm.createContext(closeSelection);
+vm.runInContext(implementation('closeFile'), closeSelection);
+closeSelection.closeFile(inactiveClose);
+assert.deepEqual(closeSelection.files, [activeClose]);
+console.log('Shared TravelEdit inactive-tab close checks passed');

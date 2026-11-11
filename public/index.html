@@ -2083,12 +2083,12 @@ function osPasteText() {
 }
 
 function doRefresh() {
-    saveWorkspace().then(function() {
+    return Promise.all([...pendingTabCloses]).then(() => saveWorkspace()).then(function() {
         // location.reload()
         var fileIndex = files.indexOf(fx)
         var newURL = addParamToCurrentURL("fileIndex", fileIndex)
         location.href = newURL
-    })
+    }).catch(e => alert("Could not reload: " + e))
 }
 
 function getAbsoluteURL(baseURL, newURL) {
@@ -3280,7 +3280,8 @@ function closeFile(theFX) {
         if (indexToClose != -1) {
             files.splice(indexToClose, 1)
             // this changes fx
-            selectFileIndex(indexToClose-1 < 0 ? 0: indexToClose-1)
+            const nextIndex = indexToClose-1 < 0 ? 0 : indexToClose-1
+            if (files[nextIndex] !== fx) selectFileIndex(nextIndex)
         }
         render()
         renderFileDropdown()
@@ -6989,16 +6990,20 @@ function openTerminal() {
     fx.terminalLoadPromise = p
     
 }
+// A reload must not race a tab deletion that is still being persisted.
+var pendingTabCloses = new Set()
 function closeFileServer(theFile) {
-    if (window.devTracker && (theFile || fx)?.fileMode == "devtracker") return devTracker.closeFile(theFile || fx)
-    if (!theFile) {
-        theFile = fx
-    }
-    return fetch(proxyPath + "/myclose?id=" + theFile.ID, {
-        cache: "no-cache"
-    // }).then(r => {
-    //     return r.json()
-    })
+    theFile = theFile || fx
+    const closing = window.devTracker && theFile?.fileMode == "devtracker"
+        ? devTracker.closeFile(theFile)
+        : fetch(proxyPath + "/myclose?id=" + theFile.ID, { cache: "no-cache" }).then(response => {
+            if (!response.ok) throw new Error("Could not close saved tab (" + response.status + ")")
+            return response
+        })
+    pendingTabCloses.add(closing)
+    // Keep failures in the set so reload cannot silently restore an unsaved close.
+    closing.then(() => pendingTabCloses.delete(closing), () => {})
+    return closing
 }
 function stopServer() {
    fetch(proxyPath + "/stop", {
@@ -13034,7 +13039,8 @@ function fetchWorkspaceWithList(index) {
         var ust = new URLSearchParams(window.location.search)
         if (ust.has("fileIndex")) {
             // todo: rerender after all files finish loading?
-            selectFileIndex(ust.get("fileIndex"))
+            // Selecting the current tab interactively means duplicate; restore must not do that.
+            if (files[ust.get("fileIndex")] !== fx) selectFileIndex(ust.get("fileIndex"))
         }
         if (workspace.FontName) {
             selectFont(workspace.FontName)
