@@ -243,3 +243,41 @@ func TestRunningCommandStopsWhenTabClosesOrCommandIsReplaced(t *testing.T) {
 		})
 	}
 }
+
+func TestIframeTabPersistence(t *testing.T) {
+	state := filepath.Join(t.TempDir(), "workspace.json")
+	config := Config{MountPath: "/editor", EnableEditor: true, Directory: t.TempDir(), StateFile: state}
+	h, err := New(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer h.Close()
+	desktopURL := "/teproxydev/desktop?taskId=42&sessionId=fixture-session&account=7"
+	created := request(h, "GET", "/editor/myaddfile?fileType=iframe&fullPath="+url.QueryEscape(desktopURL), "")
+	id := created.Header().Get("X-ID")
+	if created.Code != 200 || id == "" {
+		t.Fatalf("create iframe: %d %s", created.Code, created.Body.String())
+	}
+	if err := h.Close(); err != nil {
+		t.Fatal(err)
+	}
+	reopened, err := New(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer reopened.Close()
+	ws := snapshot(t, reopened)
+	if len(ws.Files) != 2 || ws.Files[1].Type != "iframe" || ws.Files[1].FullPath != desktopURL || fmt.Sprint(ws.Files[1].ID) != id {
+		t.Fatalf("iframe did not survive reopen: %+v", ws.Files)
+	}
+	if closed := request(reopened, "GET", "/editor/myclose?id="+id, ""); closed.Code != 200 {
+		t.Fatal(closed.Body.String())
+	}
+	if len(snapshot(t, reopened).Files) != 1 {
+		t.Fatal("closed iframe remains saved")
+	}
+	restricted := newTestHandler(t, "")
+	if denied := request(restricted, "GET", "/editor/myaddfile?fileType=iframe&fullPath="+url.QueryEscape(desktopURL), ""); denied.Code != 403 {
+		t.Fatalf("restricted mode accepted iframe: %d", denied.Code)
+	}
+}

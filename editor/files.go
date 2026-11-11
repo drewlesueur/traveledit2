@@ -28,7 +28,7 @@ func (h *Handler) validFile(f *File) bool {
 	if validTab(f.Type, f.FullPath) {
 		return true
 	}
-	return h.config.EnableEditor && (f.Type == "file" || f.Type == "directory" || f.Type == "shell")
+	return h.config.EnableEditor && (f.Type == "file" || f.Type == "directory" || f.Type == "shell" || f.Type == "iframe")
 }
 func (h *Handler) file(id int) *File {
 	for _, f := range h.workspaces[h.current].Files {
