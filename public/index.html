@@ -13500,8 +13500,8 @@ function toSnakeCase(str) {
 
 
 // not sure this feature is a good idea
-function checkButtonAction() {
-    if (window.devTracker?.activateDraft?.(fx)) return true
+function checkButtonAction(activateDraft = true) {
+    if (activateDraft && window.devTracker?.activateDraft?.(fx)) return true
     if (fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) return true
     var w = getWordAtCursor(isHashTag)
     if (w.word in buttonActions) {
@@ -14524,7 +14524,7 @@ function pasteAndToggleStuff() {
     // lol buttons
     var w = getWordBeforeCursor()
     if (alternateTap && lastAction == "move" || w.word == "") { // red marker
-        if (!checkButtonAction()) {
+        if (!checkButtonAction(false)) {
             var w = getWordAtCursor()
             //if (w.word == "" || w.start == fx.cursorColIndex) {
             if (w.word == "") {

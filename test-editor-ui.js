@@ -208,3 +208,13 @@ assert.equal(neighbors.fx,neighbors.files[1], 'last tab is not duplicated');
 neighbors.selectDesktopNeighbor(-1);
 assert.equal(neighbors.fx,neighbors.files[0]);
 console.log('Desktop toolbar tab navigation checks passed');
+
+// Word-delete may activate inline buttons, but must not refocus the reply box.
+const wordAction = {fx:{cursorLineIndex:1,cursorColIndex:2}, isHashTag:true,
+ window:{devTracker:{activateDraft(){throw Error('word delete activated reply')}}},
+ getWordAtCursor(){return {word:'hello'}},buttonActions:{},closeFile(){}};
+vm.createContext(wordAction);
+vm.runInContext(implementation('checkButtonAction'),wordAction);
+assert.equal(wordAction.checkButtonAction(false),false);
+assert.match(implementation('pasteAndToggleStuff'),/checkButtonAction\(false\)/);
+console.log('Reply word-delete routing checks passed');
