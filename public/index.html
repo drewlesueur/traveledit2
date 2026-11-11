@@ -2130,6 +2130,18 @@ function addIframe(url, id, name, cwd) {
     // iframe.setAttribute("sandbox", "allow-same-origin allow-scripts allow-popups allow-forms")
     iframe.currentElement = document.createElement("div")
     iframe.onload = function() {
+        // Optional same-origin remote surface: native cursor gestures drive it.
+        f.surface = iframe.contentWindow.travelEditSurface
+        if (f.surface) {
+            iframe.style.width = "100%"
+            iframe.style.height = "100%"
+            iframeWrapper.style.overflow = "hidden"
+            f.fullPath = iframe.src
+            setCanvasHeightAccordingly()
+            f.surface.activate(fx === f)
+            if (f.ID && files.includes(f)) saveWorkspace()
+            return
+        }
         iframe.contentWindow.document.body.style.transform = "scale("+iframeScale+")"
         iframe.contentWindow.document.body.style.transformOrigin = "top left"
 
@@ -2143,7 +2155,7 @@ function addIframe(url, id, name, cwd) {
 
 
         f.fullPath = iframe.src
-        saveWorkspace()
+        if (f.ID && files.includes(f)) saveWorkspace()
         var openFunction = function(url) {
             // TODO add ? and #
             // if (url.startsWith("https://") || url.startsWith("http://")) {
@@ -2244,13 +2256,14 @@ function addIframe(url, id, name, cwd) {
 
     // TODO: in future can we handle the id creation on the client side for less overhead?
     if (!id) {
-        fetch(proxyPath + "/myaddfile?fileType=iframe&fullPath="+encodeURIComponent(url), {
+        f.iframeRegistration = fetch(proxyPath + "/myaddfile?fileType=iframe&fullPath="+encodeURIComponent(url), {
             cache: "no-cache"
         }).then(r => {
-            if (r.headers.get("X-ID")) {
-                f.ID = r.headers.get("X-ID") - 0
-            }
-        }).catch(e => {
+            if (!r.ok || !r.headers.get("X-ID")) throw new Error("Could not save iframe tab")
+            f.ID = Number(r.headers.get("X-ID"))
+            if (files.includes(f)) return saveWorkspace()
+        })
+        f.iframeRegistration.catch(e => {
             alert("Error adding iframe " + e)
         })
 
@@ -5386,6 +5399,10 @@ function setCanvasHeight(h) {
         c.style.height = (canvasHeight/3)+"px"
     }
 
+    if (fx?.surface) {
+        fx.iframeWrapper.style.width = innerWidth + "px"
+        fx.iframeWrapper.style.height = (h / 3) + "px"
+    }
     maxLines = Math.floor(canvasHeight / fontHeight)
     
     verticalTouchSize = originalVerticalTouchSize
@@ -5627,6 +5644,7 @@ var pasteDebug = false
 var p = []
 
 function pasteLines(localCopyBuffer, unselect, pasteBefore, fromTap, unselectIfCharOneWord) {
+    if (fx?.surface) { fx.surface.insertText(localCopyBuffer.join("\n")); return 0 }
     if (window.devTracker?.canChange?.(fx) === false) return 0
     ghostSelection = null
     if (pasteDebug) {
@@ -6996,7 +7014,7 @@ function closeFileServer(theFile) {
     theFile = theFile || fx
     const closing = window.devTracker && theFile?.fileMode == "devtracker"
         ? devTracker.closeFile(theFile)
-        : fetch(proxyPath + "/myclose?id=" + theFile.ID, { cache: "no-cache" }).then(response => {
+        : Promise.resolve(theFile.iframeRegistration).then(() => fetch(proxyPath + "/myclose?id=" + theFile.ID, { cache: "no-cache" })).then(response => {
             if (!response.ok) throw new Error("Could not close saved tab (" + response.status + ")")
             return response
         })
@@ -7750,6 +7768,7 @@ var keyMaping = {
     "ArrowRight": "\x1b[C",
 }
 function handleKeydown(e) {
+    if (fx?.surface?.key?.(e)) return
     if (e.key == "Escape" && fx.textControls?.isOpen) { fx.textControls.closeAll({ focus: true }); e.preventDefault(); return }
     if (e.key == "Enter" && !e.shiftKey && !e.isComposing && e.keyCode != 229 && fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) { e.preventDefault(); return }
     if (window.devTracker?.keyDown?.(e)) return
@@ -8736,6 +8755,11 @@ function renderInternal() {
     // better to do this on initial load and then docChanged or something?
     var startRenderTime = Date.now()
     if (fx.iframe) {
+        if (fx.surface) {
+            fx.iframeCursorX = Math.max(0, Math.min(fx.iframeWrapper.clientWidth - 1, fx.iframeCursorX))
+            fx.iframeCursorY = Math.max(0, Math.min(fx.iframeWrapper.clientHeight - 1, fx.iframeCursorY))
+            fx.surface.move(fx.iframeCursorX, fx.iframeCursorY)
+        }
         iframeCursor.style.top = (fx.iframeCursorY-5) + "px"
         // iframeCursor.style.left = ((navTouchSize) +fx.iframeCursorX-5) + "px"
         iframeCursor.style.left = (fx.iframeCursorX-5) + "px"
@@ -12761,9 +12785,11 @@ function setCurrentFile(file) {
     } else {
         iframeCursor.style.display = "none"
     }
-    if (lastFile && lastFile.iframe) {
+    if (lastFile && lastFile !== fx && lastFile.iframe) {
+        lastFile.surface?.activate(false)
         lastFile.iframeWrapper.style.display = "none"
     }
+    fx.surface?.activate(true)
     setCanvasHeightAccordingly()
     updateCursorXY()
     ensureCursorInScreen()
@@ -14259,6 +14285,7 @@ function touchAreasPress(e, state) {
 }
 
 function middleTouchHandling() {
+    if (fx?.surface) { fx.surface.click(); return }
     if (window.devTracker?.activateDraft?.(fx)) return
     if (fx.textControls?.activate(fx.cursorLineIndex, fx.cursorColIndex)) return
     // now only bottom middle

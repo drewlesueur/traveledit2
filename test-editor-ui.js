@@ -128,6 +128,16 @@ console.log('Shared TravelEdit task resize checks passed');
   await closing.doRefresh();
   assert.equal(events.filter(event => event === 'save').length, 1, 'failed close must block reload and save');
   assert.equal(closing.location.href, '');
+  let registered;
+  const remoteTab = { fileMode: 'iframe', iframeRegistration: new Promise(resolve => { registered = resolve; }) };
+  closing.proxyPath = '/teproxydev';
+  const closedURLs = [];
+  closing.fetch = async url => { closedURLs.push(url); return { ok: true }; };
+  const remoteClose = closing.closeFileServer(remoteTab);
+  await Promise.resolve();
+  assert.equal(closedURLs.length, 0, 'closing a remote tab waits for its saved ID');
+  remoteTab.ID = 99; registered(); await remoteClose;
+  assert.deepEqual(closedURLs, ['/teproxydev/myclose?id=99']);
   console.log('Shared TravelEdit close-before-refresh checks passed');
 })().catch(error => { console.error(error); process.exitCode = 1; });
 
