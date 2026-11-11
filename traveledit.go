@@ -1,6 +1,7 @@
 package main
 
 import "net/http"
+import "net"
 import "net/http/httptest"
 import "net/http/httputil"
 import "net/url"
@@ -415,6 +416,34 @@ func writeWorkspaceFile(w http.ResponseWriter, r *http.Request) {
 		logAndErr(w, "marshalling for mysaveworkspace: %v", err)
 		return
 	}
+	if devTrackerMode {
+		// Preserve the previous complete workspace if the private process is
+		// stopped while saving. The temporary file stays in the same directory.
+		tmp, tmpErr := os.CreateTemp(filepath.Dir(workspacesFile), ".workspace-*")
+		if tmpErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			logAndErr(w, "creating workspace file: %v", tmpErr)
+			return
+		}
+		defer os.Remove(tmp.Name())
+		_, writeErr := tmp.Write(jsonBytes)
+		closeErr := tmp.Close()
+		if writeErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			logAndErr(w, "writing workspace file: %v", writeErr)
+			return
+		}
+		if closeErr != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			logAndErr(w, "closing workspace file: %v", closeErr)
+			return
+		}
+		if err := os.Rename(tmp.Name(), workspacesFile); err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			logAndErr(w, "saving workspace file: %v", err)
+		}
+		return
+	}
 	err = ioutil.WriteFile(workspacesFile, jsonBytes, 0644)
 	if err != nil {
 		logAndErr(w, "saving workspaces.json: %v", err)
@@ -569,6 +598,8 @@ func addCORS(next http.Handler) http.Handler {
 }
 
 var workspacesFile = "./workspaces.json"
+var devTrackerMode = os.Getenv("DEVTRACKER_MODE") == "1"
+var unixSocket = flag.String("unix-socket", "", "listen on a private Unix socket instead of TCP")
 
 func main() {
 	fmt.Println("yay1")
@@ -606,6 +637,9 @@ func main() {
 					PathDecorators:   tmpW.PathDecorators,
 				}
 				for _, f := range tmpW.Files {
+					if devTrackerMode && f.Type != "devtracker" && f.Type != "dtai-command" {
+						continue
+					}
 					if f.Type == "file" {
 						// TODO: I think you might not be taking into account *location
 						// maybe I shoulf remove that feature and always make it /
@@ -616,6 +650,8 @@ func main() {
 						addFile("", "file", f.FullPath)
 					} else if f.Type == "directory" {
 						addFile("", "directory", f.FullPath)
+					} else if f.Type == "devtracker" || f.Type == "dtai-command" {
+						addFile("", f.Type, f.FullPath)
 					} else if f.Type == "iframe" {
 						addFile("", "iframe", f.FullPath)
 					} else if f.Type == "terminal" {
@@ -650,7 +686,11 @@ func main() {
 	if workspace == nil {
 		workspace = &Workspace{Name: "default"}
 		workspaces = []*Workspace{workspace}
-		addFile("", "directory", "/")
+		if devTrackerMode {
+			addFile("", "dtai-command", "cmd")
+		} else {
+			addFile("", "directory", "/")
+		}
 	}
 	serverAddress := flag.String("addr", "localhost:8000", "serverAddress to listen on")
 	indexFile := flag.String("indexfile", "./public/index.html", "path to index html file")
@@ -1003,7 +1043,11 @@ func main() {
 				if indexStr == "new" {
 					workspace = &Workspace{Name: "workspace " + strconv.Itoa(len(workspaces)+1)}
 					workspaces = append(workspaces, workspace)
-					addFile("", "directory", "/")
+					if devTrackerMode {
+						addFile("", "dtai-command", "cmd")
+					} else {
+						addFile("", "directory", "/")
+					}
 					writeWorkspaceFile(w, r)
 					break
 				}
@@ -1012,7 +1056,7 @@ func main() {
 					logAndErr(w, "parsing index for myWorkspaceWithList: %v", err)
 					return
 				}
-				if index >= len(workspaces) {
+				if index < 0 || index >= len(workspaces) {
 					logAndErr(w, "incorrect index: %d", index)
 					return
 				}
@@ -1570,6 +1614,9 @@ func main() {
 		defer workspaceMu.Unlock()
 		newID := addFile("", r.FormValue("fileType"), r.FormValue("fullPath"))
 		w.Header().Set("X-ID", strconv.Itoa(newID))
+		if devTrackerMode {
+			writeWorkspaceFile(w, r)
+		}
 	})
 	// #wschange myterminalclose
 	mux.HandleFunc("/myclose", func(w http.ResponseWriter, r *http.Request) {
@@ -1604,6 +1651,9 @@ func main() {
 				t.Cancel()
 			}
 		}
+		if devTrackerMode {
+			writeWorkspaceFile(w, r)
+		}
 	})
 
 	mux.HandleFunc("/myquickshell", func(w http.ResponseWriter, r *http.Request) {
@@ -1630,7 +1680,7 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// TODO #wschange: you could hydrate the original files list.
 		var usedIndexFile = *indexFile
-		if r.FormValue("indexFile") != "" {
+		if !devTrackerMode && r.FormValue("indexFile") != "" {
 			usedIndexFile = r.FormValue("indexFile")
 		}
 		b, err := ioutil.ReadFile(usedIndexFile)
@@ -1639,6 +1689,10 @@ func main() {
 			return
 		}
 		htmlString := string(b)
+		if devTrackerMode {
+			htmlString = strings.Replace(htmlString, "</head>", `<script src="/teproxydev/devtracker.js"></script></head>`, 1)
+			htmlString = strings.Replace(htmlString, `<script src="https://unpkg.com/sval@0.4.8/dist/sval.min.js"></script>`, "", 1)
+		}
 		// contentString := string(c)
 		// contentLines := strings.Split(contentString, "\n")
 		// contentLinesJSON, err := json.MarshalIndent(contentLines, "", " ")
@@ -1674,7 +1728,9 @@ func main() {
 
 		// save the file to list of files
 		// addFile(r, isDir, fullPath)
-		ioutil.WriteFile("tmp", []byte(htmlString), 0777)
+		if !devTrackerMode {
+			ioutil.WriteFile("tmp", []byte(htmlString), 0777)
+		}
 		fmt.Fprintf(w, "%s", htmlString)
 	})
 	mux.HandleFunc("/duplfile", func(w http.ResponseWriter, r *http.Request) {
@@ -1978,6 +2034,28 @@ func main() {
 		})
 	})
 
+	// The DevTracker experiment exposes text task tabs, not host file/shell access.
+	if devTrackerMode {
+		original := mux
+		guarded := http.NewServeMux()
+		guarded.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+			allowed := r.URL.Path == "/" || r.URL.Path == "/myWorkspaceWithList" || r.URL.Path == "/myclose" || r.URL.Path == "/myname" || r.URL.Path == "/mysaveworkspace" || strings.HasPrefix(r.URL.Path, "/tepublic/")
+			if r.URL.Path == "/myaddfile" {
+				kind := r.FormValue("fileType")
+				allowed = kind == "devtracker" || kind == "dtai-command"
+			}
+			if !allowed {
+				http.Error(w, "This workspace supports DevTracker task tabs only", http.StatusForbidden)
+				return
+			}
+			// Prevent selecting arbitrary HTML files via the editor's indexFile option.
+			q := r.URL.Query()
+			q.Del("indexFile")
+			r.URL.RawQuery = q.Encode()
+			original.ServeHTTP(w, r)
+		})
+		mux = guarded
+	}
 	var mainMux http.Handler = mux
 	if os.Getenv("NOGZIP") != "1" {
 		// mainMux = gziphandler.GzipHandler(mux)
@@ -2057,6 +2135,21 @@ func main() {
 		})
 	}
 
+	if *unixSocket != "" {
+		listener, err := net.Listen("unix", *unixSocket)
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer listener.Close()
+		defer os.Remove(*unixSocket)
+		if err := os.Chmod(*unixSocket, 0600); err != nil {
+			log.Fatal(err)
+		}
+		if err := http.Serve(listener, mainMux); err != nil {
+			log.Printf("Unix HTTP server: %v", err)
+		}
+		return
+	}
 	if os.Getenv("POLLERPROXYSERVER") != "" {
 		pollForRequests(mainMux)
 		return

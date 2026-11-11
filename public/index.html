@@ -819,6 +819,7 @@ document.write(`
 <script>
 // it's important that this go in it's own script tag
 window.onerror = function(message, url, lineNumber, columnNumber, error) {
+    if (window.devTracker) { console.error(message, error); return false }
     if (confirm((lineNumber - 1) + ": " + message)) {
         location.href = proxyPath + "?indexFile=./public/index2.html"
     }
@@ -1201,7 +1202,8 @@ var fonts = {
         fontWidthPre: 15,
         fontSize: 30,
         fontName: "IBM8x16",
-        url: "/tepublic/WebPlus_IBM_VGA_8x16.woff"
+        url: proxyPath + "/tepublic/WebPlus_IBM_VGA_8x16.woff"
+    },
     "CascadiaCode": {
         fontHeightPre: 38,
         fontWidthPre: 18,
@@ -3316,6 +3318,7 @@ function getDefaultCWDInner(f) {
 }
 
 function addCmdTab(id=0, cwd="", name="") {
+    if (window.devTracker) return devTracker.cmd()
     // I think this /cmd isn't hit on the server
     // I think we need a special endpoint for serving files and not just /
     var file = makeFile(proxyPath + "/cmd", 0, shellHelpers.join("\n"))
@@ -3441,6 +3444,7 @@ function setLastWord(maybeLastWord) {
     }
 }
 function docChanged(preventUndo) {
+    if (window.devTracker && fx.fileMode == "devtracker") { devTracker.redraw(fx); return }
     fx.version += 1
     setLastWord(getWordAtCursor().word)
     if (!preventUndo) {
@@ -3529,6 +3533,7 @@ function splitGraphemes(theLine) {
 // is being updated, like a splice?
 // maybe you can do a line diff too.
 function updateLineFile(file, index, value) {
+    if (file.fileMode == "devtracker") return file.lines[index == -1 ? file.cursorLineIndex : index]
     if (index == -1) {
         index = file.cursorLineIndex
     }
@@ -5387,7 +5392,7 @@ function setCanvasHeightAccordingly() {
     }
     // for the ipad, try to use the floating keyboard
 
-    if (!floatingKeyboard && (document.activeElement == theText || document.activeElement == searchText || document.activeElement == editorCommandText || document.activeElement == voiceCommandText)) {
+    if (!floatingKeyboard && (document.activeElement == theText || document.activeElement == searchText || document.activeElement == editorCommandText || document.activeElement == voiceCommandText || window.devTracker?.isComposing())) {
         if (fx.fileMode == "terminal") {
             setCanvasHeight(canvasHeightKeyboardTerminal - heightReduction)
         } else {
@@ -5418,6 +5423,7 @@ function setCanvasHeightAccordingly() {
 function setCanvasWidth(w) {
     canvasWidth = w
     maxCols = Math.floor(canvasWidth / fontWidth)
+    if (window.devTracker) devTracker.reflow()
 }
 
 function linkToRemote() {
@@ -6049,6 +6055,7 @@ function uploadBlob(blob, filename) {
 // See other places where we simply splice an empty string 
 // like when calling chatGPT
 function newLine(e, shouldFocus) {
+    if (window.devTracker && devTracker.enter()) { if (e) e.preventDefault(); return false }
     var theLine = fx.lines[fx.cursorLineIndex]
     e && e.preventDefault()
     if (fx.fileMode == "shell") {
@@ -6078,6 +6085,7 @@ function runQuickShellCommand(cmdString, cb) {
     })
 }
 function runShellCommand(line) {
+    if (window.devTracker && devTracker.command(line)) return
     // outer loop to simulate goto
     if (fx.fileMode != "shell") {
         return
@@ -6795,6 +6803,7 @@ function timeWithMillis() {
 }
 var pollId = 0
 function pollTerminals() {
+    if (window.devTracker) return
     // log("p: " + timeWithMillis())
     pollId++
     // showLog(true)
@@ -6940,6 +6949,7 @@ function openTerminal() {
     
 }
 function closeFileServer(theFile) {
+    if (window.devTracker) return devTracker.closeFile(theFile || fx)
     if (!theFile) {
         theFile = fx
     }
@@ -7561,6 +7571,7 @@ function handleBlur() {
 
 // pressing the save button disables autosave
 function saveWrapper() {
+    if (window.devTracker && devTracker.enter()) return
     if (fx.fileMode == "shell") {
         // the save button turns into run when it's a "shell" file
         if (fx.selectedRegions.length) {
@@ -7689,6 +7700,11 @@ var keyMaping = {
     "ArrowRight": "\x1b[C",
 }
 function handleKeydown(e) {
+    if (window.devTracker && fx.fileMode == "dtai-command" && e.key == "Enter") { e.preventDefault(); devTracker.enter(); return false }
+    if (window.devTracker && fx.fileMode == "devtracker" && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown", "Tab"].includes(e.key)) {
+        if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() != "c") e.preventDefault()
+        return
+    }
     // TODO: this is where you could wrap or unwrap quotes, etc
     if (fx.fileMode == "terminal") {
         var mapped = e.key
@@ -9394,8 +9410,10 @@ function renderInternal() {
                             chr = "*"
                         }
                     }
+                    if (window.devTracker) t.font = devTracker.font(fx, theIndex, x + fx.offsetX, t.font)
                     t.fillText(chr, x*fontWidth, y*fontHeight + extraY + fontOffsetY)
                 } else {
+                    if (window.devTracker) t.font = devTracker.font(fx, theIndex, x + fx.offsetX, fontCSS)
                     t.fillText(chr, x*fontWidth, y*fontHeight + fontOffsetY)
                 }
             }
@@ -12629,6 +12647,7 @@ function setCurrentFile(file) {
         lastFile = fx
     }
     fx = file
+    if (window.devTracker) devTracker.select(file)
     if (initialFileAdding) {
         return
     }
@@ -12681,6 +12700,7 @@ function setCurrentFile(file) {
     theText.setAttribute("placeholder", fx.fullPath.split("/").reverse().join(" < "))
     render()
     renderFileDropdown()
+    if (window.devTracker) devTracker.didSelect()
 
 }
 
@@ -12927,7 +12947,9 @@ function fetchWorkspaceWithList(index) {
         for (var serverFile of workspace.Files) {
             // TODO: fix inconsistent file naming #inconsistentFileNaming
             var f
-            if (serverFile.Type == "terminal") {
+            if (window.devTracker && (serverFile.Type == "devtracker" || serverFile.Type == "dtai-command")) {
+                f = devTracker.restore(serverFile)
+            } else if (serverFile.Type == "terminal") {
                 f = addExistingTerminalTab(serverFile.ID, serverFile.Name, serverFile.CWD)
             } else if (serverFile.Type == "shell") {
                 f = addCmdTab(serverFile.ID, serverFile.CWD, serverFile.Name)
@@ -12943,6 +12965,10 @@ function fetchWorkspaceWithList(index) {
             fx.highlightRanges = serverFile.HighlightRanges
         }
         initialFileAdding = false
+        if (window.devTracker) {
+            if (!files.length) devTracker.cmd()
+            devTracker.didSelect()
+        }
         var ust = new URLSearchParams(window.location.search)
         if (ust.has("fileIndex")) {
             // todo: rerender after all files finish loading?
@@ -12979,6 +13005,7 @@ function fetchWorkspaceWithList(index) {
     })
 }
 
+if (window.devTracker) devTracker.ready()
 fetchWorkspaceWithList(-1)
 
 
