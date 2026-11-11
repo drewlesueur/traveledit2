@@ -13044,8 +13044,12 @@ function saveWorkspace(oldWorkspaceName) {
     // }).then(r => {
     //     return r.json()
     // }).then(r => {
+    }).then(response => {
+        if (window.devTracker && !response.ok) throw new Error("Workspace save failed (" + response.status + ")")
+        return response
     }).catch(e => {
         alert("error saving workspace: " + e)
+        if (window.devTracker) throw e
     })
 }
 function setHighlightMatches() {

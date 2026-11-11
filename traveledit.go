@@ -2,6 +2,7 @@ package main
 
 import "net/http"
 import "net"
+import "github.com/drewlesueur/traveledit2/editor"
 import "net/http/httptest"
 import "net/http/httputil"
 import "net/url"
@@ -416,34 +417,6 @@ func writeWorkspaceFile(w http.ResponseWriter, r *http.Request) {
 		logAndErr(w, "marshalling for mysaveworkspace: %v", err)
 		return
 	}
-	if devTrackerMode {
-		// Preserve the previous complete workspace if the private process is
-		// stopped while saving. The temporary file stays in the same directory.
-		tmp, tmpErr := os.CreateTemp(filepath.Dir(workspacesFile), ".workspace-*")
-		if tmpErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			logAndErr(w, "creating workspace file: %v", tmpErr)
-			return
-		}
-		defer os.Remove(tmp.Name())
-		_, writeErr := tmp.Write(jsonBytes)
-		closeErr := tmp.Close()
-		if writeErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			logAndErr(w, "writing workspace file: %v", writeErr)
-			return
-		}
-		if closeErr != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			logAndErr(w, "closing workspace file: %v", closeErr)
-			return
-		}
-		if err := os.Rename(tmp.Name(), workspacesFile); err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			logAndErr(w, "saving workspace file: %v", err)
-		}
-		return
-	}
 	err = ioutil.WriteFile(workspacesFile, jsonBytes, 0644)
 	if err != nil {
 		logAndErr(w, "saving workspaces.json: %v", err)
@@ -598,13 +571,48 @@ func addCORS(next http.Handler) http.Handler {
 }
 
 var workspacesFile = "./workspaces.json"
-var devTrackerMode = os.Getenv("DEVTRACKER_MODE") == "1"
 var unixSocket = flag.String("unix-socket", "", "listen on a private Unix socket instead of TCP")
 
 func main() {
 	fmt.Println("yay1")
 	if os.Getenv("WORKSPACES_FILE") != "" {
 		workspacesFile = os.Getenv("WORKSPACES_FILE")
+	}
+	serverAddress := flag.String("addr", "localhost:8000", "serverAddress to listen on")
+	indexFile := flag.String("indexfile", "./public/index.html", "path to index html file")
+	screenshareFile := flag.String("screensharefile", "./public/view.html", "path to view html file")
+	loginFile := flag.String("loginFile", "./public/login.html", "path to login  html file")
+	location := flag.String("location", "", "path to directory to serve")
+	proxyPath = flag.String("proxypath", "", "the path for proxies, what to ignore")
+
+	// Whether or not the proxypath is removed by the reverse proxy
+	// seems with apache ProxyPath it is removed.
+	proxyPathTrimmed := flag.Bool("proxypathtrimmed", false, "does the reverse proxy trim the proxy path?")
+	allowedIPsStr := os.Getenv("ALLOWEDIPS")
+	allowedIPs := strings.Split(allowedIPsStr, ",")
+	allowedIPsMap := map[string]bool{}
+	for _, ip := range allowedIPs {
+		if ip != "" {
+			allowedIPsMap[ip] = true
+		}
+	}
+	// Simple case only allows 1 proxy!
+	allowedXForwardedForsStr := os.Getenv("ALLOWEDXFORWARDEDFORS")
+	allowedXForwardedFors := strings.Split(allowedXForwardedForsStr, ",")
+	allowedXForwardedForsMap := map[string]bool{}
+	for _, ip := range allowedXForwardedFors {
+		if ip != "" {
+			allowedXForwardedForsMap[ip] = true
+		}
+	}
+	flag.Parse()
+	log.Printf("proxyPath is: %s", *proxyPath)
+
+	if os.Getenv("DEVTRACKER_MODE") == "1" {
+		if err := runTaskEditor(*serverAddress, *unixSocket, *proxyPath, workspacesFile); err != nil {
+			log.Fatal(err)
+		}
+		return
 	}
 	fmt.Println("workspaces file", workspacesFile)
 	workspaceCond = sync.NewCond(&workspaceMu)
@@ -637,9 +645,6 @@ func main() {
 					PathDecorators:   tmpW.PathDecorators,
 				}
 				for _, f := range tmpW.Files {
-					if devTrackerMode && f.Type != "devtracker" && f.Type != "dtai-command" {
-						continue
-					}
 					if f.Type == "file" {
 						// TODO: I think you might not be taking into account *location
 						// maybe I shoulf remove that feature and always make it /
@@ -650,8 +655,6 @@ func main() {
 						addFile("", "file", f.FullPath)
 					} else if f.Type == "directory" {
 						addFile("", "directory", f.FullPath)
-					} else if f.Type == "devtracker" || f.Type == "dtai-command" {
-						addFile("", f.Type, f.FullPath)
 					} else if f.Type == "iframe" {
 						addFile("", "iframe", f.FullPath)
 					} else if f.Type == "terminal" {
@@ -686,41 +689,8 @@ func main() {
 	if workspace == nil {
 		workspace = &Workspace{Name: "default"}
 		workspaces = []*Workspace{workspace}
-		if devTrackerMode {
-			addFile("", "dtai-command", "cmd")
-		} else {
-			addFile("", "directory", "/")
-		}
+		addFile("", "directory", "/")
 	}
-	serverAddress := flag.String("addr", "localhost:8000", "serverAddress to listen on")
-	indexFile := flag.String("indexfile", "./public/index.html", "path to index html file")
-	screenshareFile := flag.String("screensharefile", "./public/view.html", "path to view html file")
-	loginFile := flag.String("loginFile", "./public/login.html", "path to login  html file")
-	location := flag.String("location", "", "path to directory to serve")
-	proxyPath = flag.String("proxypath", "", "the path for proxies, what to ignore")
-
-	// Whether or not the proxypath is removed by the reverse proxy
-	// seems with apache ProxyPath it is removed.
-	proxyPathTrimmed := flag.Bool("proxypathtrimmed", false, "does the reverse proxy trim the proxy path?")
-	allowedIPsStr := os.Getenv("ALLOWEDIPS")
-	allowedIPs := strings.Split(allowedIPsStr, ",")
-	allowedIPsMap := map[string]bool{}
-	for _, ip := range allowedIPs {
-		if ip != "" {
-			allowedIPsMap[ip] = true
-		}
-	}
-	// Simple case only allows 1 proxy!
-	allowedXForwardedForsStr := os.Getenv("ALLOWEDXFORWARDEDFORS")
-	allowedXForwardedFors := strings.Split(allowedXForwardedForsStr, ",")
-	allowedXForwardedForsMap := map[string]bool{}
-	for _, ip := range allowedXForwardedFors {
-		if ip != "" {
-			allowedXForwardedForsMap[ip] = true
-		}
-	}
-	flag.Parse()
-	log.Printf("proxyPath is: %s", *proxyPath)
 
 	if *location == "" {
 		cmd := exec.Command("bash", "-c", "pwd")
@@ -1043,11 +1013,7 @@ func main() {
 				if indexStr == "new" {
 					workspace = &Workspace{Name: "workspace " + strconv.Itoa(len(workspaces)+1)}
 					workspaces = append(workspaces, workspace)
-					if devTrackerMode {
-						addFile("", "dtai-command", "cmd")
-					} else {
-						addFile("", "directory", "/")
-					}
+					addFile("", "directory", "/")
 					writeWorkspaceFile(w, r)
 					break
 				}
@@ -1614,9 +1580,6 @@ func main() {
 		defer workspaceMu.Unlock()
 		newID := addFile("", r.FormValue("fileType"), r.FormValue("fullPath"))
 		w.Header().Set("X-ID", strconv.Itoa(newID))
-		if devTrackerMode {
-			writeWorkspaceFile(w, r)
-		}
 	})
 	// #wschange myterminalclose
 	mux.HandleFunc("/myclose", func(w http.ResponseWriter, r *http.Request) {
@@ -1651,9 +1614,6 @@ func main() {
 				t.Cancel()
 			}
 		}
-		if devTrackerMode {
-			writeWorkspaceFile(w, r)
-		}
 	})
 
 	mux.HandleFunc("/myquickshell", func(w http.ResponseWriter, r *http.Request) {
@@ -1680,7 +1640,7 @@ func main() {
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		// TODO #wschange: you could hydrate the original files list.
 		var usedIndexFile = *indexFile
-		if !devTrackerMode && r.FormValue("indexFile") != "" {
+		if r.FormValue("indexFile") != "" {
 			usedIndexFile = r.FormValue("indexFile")
 		}
 		b, err := ioutil.ReadFile(usedIndexFile)
@@ -1689,10 +1649,6 @@ func main() {
 			return
 		}
 		htmlString := string(b)
-		if devTrackerMode {
-			htmlString = strings.Replace(htmlString, "</head>", `<script src="/teproxydev/devtracker.js"></script></head>`, 1)
-			htmlString = strings.Replace(htmlString, `<script src="https://unpkg.com/sval@0.4.8/dist/sval.min.js"></script>`, "", 1)
-		}
 		// contentString := string(c)
 		// contentLines := strings.Split(contentString, "\n")
 		// contentLinesJSON, err := json.MarshalIndent(contentLines, "", " ")
@@ -1728,9 +1684,7 @@ func main() {
 
 		// save the file to list of files
 		// addFile(r, isDir, fullPath)
-		if !devTrackerMode {
-			ioutil.WriteFile("tmp", []byte(htmlString), 0777)
-		}
+		ioutil.WriteFile("tmp", []byte(htmlString), 0777)
 		fmt.Fprintf(w, "%s", htmlString)
 	})
 	mux.HandleFunc("/duplfile", func(w http.ResponseWriter, r *http.Request) {
@@ -2034,28 +1988,6 @@ func main() {
 		})
 	})
 
-	// The DevTracker experiment exposes text task tabs, not host file/shell access.
-	if devTrackerMode {
-		original := mux
-		guarded := http.NewServeMux()
-		guarded.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-			allowed := r.URL.Path == "/" || r.URL.Path == "/myWorkspaceWithList" || r.URL.Path == "/myclose" || r.URL.Path == "/myname" || r.URL.Path == "/mysaveworkspace" || strings.HasPrefix(r.URL.Path, "/tepublic/")
-			if r.URL.Path == "/myaddfile" {
-				kind := r.FormValue("fileType")
-				allowed = kind == "devtracker" || kind == "dtai-command"
-			}
-			if !allowed {
-				http.Error(w, "This workspace supports DevTracker task tabs only", http.StatusForbidden)
-				return
-			}
-			// Prevent selecting arbitrary HTML files via the editor's indexFile option.
-			q := r.URL.Query()
-			q.Del("indexFile")
-			r.URL.RawQuery = q.Encode()
-			original.ServeHTTP(w, r)
-		})
-		mux = guarded
-	}
 	var mainMux http.Handler = mux
 	if os.Getenv("NOGZIP") != "1" {
 		// mainMux = gziphandler.GzipHandler(mux)
@@ -2747,4 +2679,35 @@ func buildTree(dir string) (string, []string, error) {
 		return "", nil, err
 	}
 	return sb.String(), files, nil
+}
+
+// The CLI and embedding hosts use the same task workspace implementation.
+// The normal standalone file/shell editor above retains its existing behavior.
+func runTaskEditor(address, socketPath, mountPath, stateFile string) error {
+	scriptURL := os.Getenv("TRAVELEDIT_SCRIPT_URL")
+	if scriptURL == "" {
+		scriptURL = strings.TrimSuffix(mountPath, "/") + "/devtracker.js"
+	}
+	app, err := editor.New(editor.Config{MountPath: mountPath, StateFile: stateFile, ScriptURL: scriptURL})
+	if err != nil {
+		return err
+	}
+	defer app.Close()
+	var handler http.Handler = app
+	if os.Getenv("NOBASICAUTH") == "" {
+		handler = BasicAuth(handler)
+	}
+	if socketPath == "" {
+		return http.ListenAndServe(address, handler)
+	}
+	listener, err := net.Listen("unix", socketPath)
+	if err != nil {
+		return err
+	}
+	defer listener.Close()
+	defer os.Remove(socketPath)
+	if err := os.Chmod(socketPath, 0600); err != nil {
+		return err
+	}
+	return http.Serve(listener, handler)
 }
