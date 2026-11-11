@@ -125,7 +125,7 @@ assert.ok(afterOverlay.overlay.lines[0].includes('Settings'));
 floating.activate(12, 2);
 assert.equal(overlayClicked, true, 'popup hit regions use overlay coordinates');
 const upperOverlay = floating.render({ startRow: 20, viewportRows: 23, overlay: true });
-assert.equal(upperOverlay.overlay.row, 16, 'popup can overlay rows above the trigger');
+assert.equal(upperOverlay.overlay.row, 17, 'popup can overlay rows above the trigger');
 assert.deepEqual(upperOverlay.lines, beforeOverlay.lines);
 floating.closeAll();
 assert.equal(floating.render({ startRow: 10, overlay: true }).overlay, null);

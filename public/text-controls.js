@@ -146,7 +146,7 @@
       }
       function box() {
         const inner = Math.max(1, width - 4);
-        row('┌' + clip('─ ' + popup.title + ' ', inner).padEnd(inner, '─') + '┐░');
+        row('┌' + clip('─ ' + popup.title + ' ', inner).padEnd(inner, '─') + '┐');
         for (const node of popup.items) {
           if (node.type === 'field') {
             // Editable text uses native editor columns, without box padding.
@@ -158,13 +158,12 @@
             continue;
           }
           const text = clip(node.type === 'button' ? node.label : node.text, inner);
-          row('│' + text.padEnd(inner, ' ') + '│░', node, 1, inner + 1, popup.disabled);
+          row('│' + text.padEnd(inner, ' ') + '│', node, 1, inner + 1, popup.disabled);
         }
-        row('└' + '─'.repeat(inner) + '┘░');
-        row(' ' + '░'.repeat(inner + 2));
+        row('└' + '─'.repeat(inner) + '┘');
       }
       // Insert the popup above its trigger when there is less room below it.
-      const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length : 1), 3) : 0;
+      const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length : 1), 2) : 0;
       const above = popup && startRow + (rootLayout === 'row' ? Math.min(1, content.length) * (buttonStyle === 'box' ? 3 : 1) : content.length) + boxHeight >= viewportStart + viewportRows;
       let floating = null;
       if (overlay) {
