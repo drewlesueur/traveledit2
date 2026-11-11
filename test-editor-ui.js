@@ -83,3 +83,20 @@ const taskToolbarActions = [...taskToolbarMarkup.matchAll(/data-task-action="([^
 assert.deepEqual(taskToolbarActions, ['status', 'interrupt', 'voice', 'settings', 'diff', 'send', 'accept']);
 assert.match(taskToolbarMarkup, /data-task-action="send"[^>]*>Send</);
 console.log('Shared TravelEdit task-toolbar layout checks passed');
+
+const resizing = {
+  innerWidth: 390, innerHeight: 844, screen: { width: 390, height: 844 },
+  c: { style: {} }, fx: { fileMode: 'devtracker' }, devTracker: {},
+  setCanvasWidth() {}, setCanvasHeight(value) { resizing.result = value; },
+  setCanvasHeightAccordingly() { resizing.result = 1710 - 56 * 3; },
+};
+resizing.window = resizing;
+vm.createContext(resizing);
+vm.runInContext(implementation('doSizing').replace(/\ndoSizing\(\)\s*$/, ''), resizing);
+resizing.doSizing();
+assert.equal(resizing.result, 1542, 'task resize retains the control-row reduction');
+resizing.fx.fileMode = 'shell'; resizing.doSizing();
+assert.equal(resizing.result, 1710, 'native cmd resize keeps its existing height');
+resizing.fx = undefined; resizing.doSizing();
+assert.equal(resizing.result, 1710, 'initial sizing works before a tab exists');
+console.log('Shared TravelEdit task resize checks passed');

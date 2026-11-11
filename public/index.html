@@ -1931,8 +1931,13 @@ function doSizing() {
     canvasHeightTerminal = canvasHeightFull
     canvasHeightIframe = canvasHeightFull
 
-    setCanvasHeight(canvasHeightFull)
     setCanvasWidth(canvasWidth)
+    // Task tabs have host controls whose measured height must survive resizing.
+    if (fx?.fileMode == "devtracker" && window.devTracker) {
+        setCanvasHeightAccordingly()
+    } else {
+        setCanvasHeight(canvasHeightFull)
+    }
 }
 doSizing()
 
