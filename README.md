@@ -85,6 +85,10 @@ const result = controls.render({ startRow, width, viewportStart, viewportRows })
 // Append result.lines to file.lines. Keep them outside the editable range.
 ```
 
+Pass `{ layout: 'row' }` as the second argument to `setContent` to place the
+main controls on a single unwrapped, unclipped line. The editor supplies horizontal
+scrolling; popup choices keep their vertical layout.
+
 The native middle-region tap and Enter activate `file.textControls` at the current
 cursor row and column. A popup can open another popup with `{ parent: tools }`;
 `close()` returns to its parent. `capture()` and `locate()` preserve a control

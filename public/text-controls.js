@@ -3,7 +3,7 @@
 (function (host) {
   'use strict';
   function createControls({ onChange = () => {}, onClose = () => {} } = {}) {
-    let content = [], stack = [], regions = [], controlRows = new Set(), firstAction = null;
+    let content = [], rootLayout = 'column', stack = [], regions = [], controlRows = new Set(), firstAction = null;
     const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
     function refresh({ focus = false } = {}) { onChange({ focus }); }
     function closeAll({ focus = false } = {}) {
@@ -62,6 +62,19 @@
         if (node?.type === 'button' || node?.type === 'field') regions.push({ row: index, start, stop, node, disabled: disabled || node.disabled });
       }
       function roots() {
+        if (rootLayout === 'row' && content.length) {
+          const index = startRow + lines.length;
+          let text = '';
+          for (const node of content) {
+            if (text) text += ' ';
+            const start = measure(text);
+            const value = node.type === 'button' ? node.label : node.text;
+            text += String(typeof value === 'function' ? value() : value);
+            if (node.type === 'button') regions.push({ row: index, start, stop: measure(text), node, disabled: node.disabled });
+          }
+          // Keep the entire row; the host editor supplies horizontal scrolling.
+          row(text); return;
+        }
         for (const node of content) {
           const text = clip(node.type === 'button' ? node.label : node.text, width);
           row(text, node, 0, Array.from(text).length);
@@ -88,7 +101,7 @@
       }
       // Insert the popup above its trigger when there is less room below it.
       const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length : 1), 3) : 0;
-      const above = popup && startRow + content.length + boxHeight >= viewportStart + viewportRows;
+      const above = popup && startRow + (rootLayout === 'row' ? Math.min(1, content.length) : content.length) + boxHeight >= viewportStart + viewportRows;
       if (above) { box(); roots(); } else { roots(); if (popup) box(); }
       firstAction = regions.find(region => !region.disabled && (!popup || popup.items.includes(region.node))) || regions.find(region => !region.disabled) || null;
       return { lines };
@@ -96,7 +109,7 @@
     function hit(row, column) { return regions.find(region => region.row === row && column >= region.start && column < region.stop); }
     return {
       button, open, refresh, closeAll, render,
-      setContent(nodes) { content = nodes; },
+      setContent(nodes, { layout = 'column' } = {}) { content = nodes; rootLayout = layout; },
       get isOpen() { return stack.length > 0; },
       get focusTarget() { return firstAction; },
       isControlRow(row) { return controlRows.has(row); },
