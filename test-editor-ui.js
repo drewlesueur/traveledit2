@@ -155,3 +155,20 @@ vm.runInContext(implementation('closeFile'), closeSelection);
 closeSelection.closeFile(inactiveClose);
 assert.deepEqual(closeSelection.files, [activeClose]);
 console.log('Shared TravelEdit inactive-tab close checks passed');
+
+const backgroundSource = source.slice(source.indexOf('    // Embedded row backgrounds'), source.indexOf('    // draw line where your cursor'));
+const tintedRects = [];
+const tint = {
+  maxLines: 2, fx: { offsetX: 3, offsetY: 10 }, isDark: false, fontWidth: 10, fontHeight: 20, c: { width: 100 },
+  t: { fillStyle: 'original', fillRect(...rect) { tintedRects.push(rect); } },
+  devTracker: { background(file, row) { return row === 10 ? { start: 1, stop: 8, color: 'tint' } : null; } }
+};
+tint.window = tint;
+vm.createContext(tint);
+vm.runInContext(backgroundSource, tint);
+assert.deepEqual(tintedRects, [[0, 0, 50, 20]], 'header tint clips correctly after horizontal scrolling');
+assert.equal(tint.t.fillStyle, 'original');
+tint.devTracker.background = () => null;
+vm.runInContext(backgroundSource, tint);
+assert.equal(tintedRects.length, 1, 'ordinary rows add no background');
+console.log('Shared TravelEdit header background checks passed');

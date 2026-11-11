@@ -8763,6 +8763,21 @@ function renderInternal() {
         t.fillRect(canvasWidth - navTouchSize*3, 0, navTouchSize*3, canvasHeight)
     }
     
+    // Embedded row backgrounds sit beneath cursor and selection highlights.
+    if (window.devTracker?.background) {
+        const previousFill = t.fillStyle
+        for (let row = 0; row < maxLines; row++) {
+            const region = devTracker.background(fx, row + fx.offsetY, isDark)
+            if (!region) continue
+            const left = Math.max(0, (region.start - fx.offsetX) * fontWidth)
+            const right = Math.min(c.width, (region.stop - fx.offsetX) * fontWidth)
+            if (right <= left) continue
+            t.fillStyle = region.color
+            t.fillRect(left, row * fontHeight, right - left, fontHeight)
+        }
+        t.fillStyle = previousFill
+    }
+
     // draw line where your cursor is for help with finding
     var underlineOffset = (fontHeight) - (1/6/2 * fontHeight)
     // var underlineHeight = fontHeight/6
