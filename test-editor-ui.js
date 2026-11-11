@@ -80,7 +80,7 @@ console.log('Shared TravelEdit control-highlight checks passed');
 
 const taskToolbarMarkup = source.slice(source.indexOf('id="devTrackerToolbar"'), source.indexOf('id=fileToolbar1'));
 const taskToolbarActions = [...taskToolbarMarkup.matchAll(/data-task-action="([^"]+)"/g)].map(match => match[1]);
-assert.deepEqual(taskToolbarActions, ['status', 'interrupt', 'voice', 'settings', 'diff', 'send', 'accept']);
+assert.deepEqual(taskToolbarActions, ['status', 'interrupt', 'voice', 'settings', 'diff', 'send', 'accept', 'model', 'review', 'power', 'star', 'attachments', 'screenshot', 'infographic', 'reviews']);
 assert.match(taskToolbarMarkup, /data-task-action="send"[^>]*>Send</);
 console.log('Shared TravelEdit task-toolbar layout checks passed');
 

@@ -130,3 +130,9 @@ Standalone file and cmd toolbars keep their existing actions.
 The four corner characters render as rounded quarter-rings while retaining their
 Unicode values. `╭ ╮ ╰ ╯` are supported as aliases. Straight lines and junctions
 still meet the same cell-edge coordinates.
+
+`TravelEditUI.createDOMControls()` provides the same declarative popup methods
+(`open`, `button`, `note`, `field`, `radioGroup`, `closeAll`) as the text controls,
+with DOM rendering for host toolbars. Use `setAnchor(element)` to position the
+popup above its toolbar button; Escape or clicking outside closes it. Hosts
+supply the popup styles and actions. The text renderer remains independent.

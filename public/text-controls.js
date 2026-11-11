@@ -228,6 +228,95 @@
       destroy() { closeAll(); content = []; regions = []; controlRows.clear(); }
     };
   }
-  host.TravelEditUI = { createControls, isBoxCharacter, drawBoxCharacter };
+  // A DOM surface for the same declarative popup API used by text controls.
+  // Hosts choose the surface; actions and field models remain independent of it.
+  function createDOMControls({ onClose = () => {} } = {}) {
+    let stack = [], anchor = null, root = null;
+    const elements = new WeakMap();
+    const valueOf = value => String(typeof value === 'function' ? value() : value ?? '');
+    const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
+    function outside(event) { if (root && !root.contains(event.target) && !anchor?.contains(event.target)) closeAll(); }
+    function key(event) { if (event.key === 'Escape') { event.preventDefault(); closeAll(); anchor?.focus?.(); } }
+    function closeAll() {
+      if (!stack.length) return;
+      stack = []; root?.remove(); root = null;
+      document.removeEventListener('pointerdown', outside); document.removeEventListener('keydown', key);
+      window.removeEventListener('resize', refresh); window.visualViewport?.removeEventListener('resize', refresh);
+      onClose();
+    }
+    function refresh() {
+      const popup = stack.at(-1);
+      if (!popup) return;
+      if (!root) {
+        root = document.createElement('section'); root.className = 'te-dom-popup';
+        root.setAttribute('role', 'dialog');
+        document.body.append(root);
+        document.addEventListener('pointerdown', outside); document.addEventListener('keydown', key);
+        window.addEventListener('resize', refresh); window.visualViewport?.addEventListener('resize', refresh);
+      }
+      root.setAttribute('aria-label', popup.title);
+      let heading = elements.get(popup);
+      if (!heading) { heading = document.createElement('strong'); elements.set(popup, heading); }
+      heading.textContent = popup.title;
+      const wanted = [heading];
+      for (const node of popup.items) {
+        let el = elements.get(node);
+        if (!el) {
+          el = document.createElement(node.type === 'button' ? 'button' : node.type === 'field' ? 'textarea' : node.type === 'frame' ? 'iframe' : 'div');
+          if (node.type === 'frame') { el.src = node.url; el.title = node.title; }
+          if (node.type === 'button') { el.type = 'button'; el.addEventListener('click', () => node.action?.()); }
+          if (node.type === 'field') {
+            el.rows = node.multiline ? 3 : 1; el.setAttribute('aria-label', node.label);
+            el.addEventListener('input', () => { node.value = el.value; node.onInput?.(node.value); });
+          }
+          elements.set(node, el);
+        }
+        if (node.type === 'field') { if (document.activeElement !== el) el.value = node.value; }
+        else if (node.type !== 'frame') el.textContent = valueOf(node.type === 'button' ? node.label : node.text);
+        el.disabled = popup.disabled || node.disabled || false;
+        wanted.push(el);
+      }
+      let close = popup.closeButton;
+      if (!close) { close = popup.closeButton = document.createElement('button'); close.type = 'button'; close.textContent = popup.parent ? 'Back' : 'Close'; close.addEventListener('click', () => popup.close()); }
+      wanted.push(close);
+      for (const el of [...root.children]) if (!wanted.includes(el)) el.remove();
+      wanted.forEach((el, index) => { if (root.children[index] !== el) root.insertBefore(el, root.children[index] || null); });
+      const rect = anchor?.getBoundingClientRect();
+      const bottom = Math.max(8, window.innerHeight - (rect?.top ?? window.innerHeight - 8) + 4);
+      root.style.bottom = bottom + 'px';
+      root.style.maxHeight = Math.max(100, window.innerHeight - bottom - 8) + 'px';
+    }
+    function open(title, { parent = null } = {}) {
+      if (parent) {
+        const index = stack.indexOf(parent);
+        if (index < 0) throw new Error('Parent popup is closed');
+        stack = stack.slice(0, index + 1);
+      } else if (stack.length) { stack = []; onClose(); }
+      const popup = {
+        title, parent, items: [], disabled: false,
+        frame(url, title) { const node = { type: 'frame', url, title }; popup.items.push(node); return node; },
+        get isOpen() { return stack.includes(popup); },
+        button(label, action, options) { const node = button(label, action, options); popup.items.push(node); return node; },
+        note(text) { const node = { type: 'text', text }; popup.items.push(node); return node; },
+        field(label, value, options = {}) {
+          popup.note(label); const node = { type: 'field', label, value: String(value ?? ''), multiline: !!options.multiline, onInput: options.onInput };
+          popup.items.push(node); return node;
+        },
+        radioGroup(label, options, value, change) {
+          popup.note(label);
+          for (const option of options.map(option => typeof option === 'string' ? { value: option, label: option } : option)) {
+            popup.button(() => (option.value === value ? '● ' : '○ ') + option.label, () => { value = option.value; change?.(value); refresh(); }, { disabled: option.disabled });
+          }
+          return { get value() { return value; }, setValue(next) { value = next; refresh(); } };
+        },
+        setDisabled(disabled) { popup.disabled = disabled; refresh(); },
+        close() { const index = stack.indexOf(popup); if (index < 0) return; if (!index) closeAll(); else { stack = stack.slice(0, index); refresh(); } }
+      };
+      stack.push(popup); return popup;
+    }
+    return { button, open, refresh, closeAll, get isOpen() { return stack.length > 0; },
+      setAnchor(element) { anchor = element; }, setContent() {}, destroy: closeAll };
+  }
+  host.TravelEditUI = { createDOMControls, createControls, isBoxCharacter, drawBoxCharacter };
   if (typeof module !== 'undefined' && module.exports) module.exports = host.TravelEditUI;
 })(typeof window === 'undefined' ? globalThis : window);

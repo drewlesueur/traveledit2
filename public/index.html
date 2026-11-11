@@ -202,10 +202,12 @@ body.light .toolbar div.selected {
 
 
 
+#devTrackerToolbar { flex-wrap: nowrap; overflow-x: auto; }
 #devTrackerToolbar .middleButton {
-    flex: 1 1 0;
-    min-width: 0;
+    flex: 0 0 auto;
+    min-width: 48px;
     width: auto;
+    padding: 0 8px;
 }
 #devTrackerToolbar [data-task-action="status"] { flex: 0 0 38px; font-size: 10px; }
 #devTrackerToolbar [aria-disabled="true"] { opacity: 0.45; }
@@ -391,6 +393,14 @@ They get changed later on.
     <div class="middleButton" data-task-action="diff" onclick="window.devTracker?.toolbarAction('diff')">Diff Good?</div>
     <div class="middleButton" data-task-action="send" onclick="window.devTracker?.toolbarAction('send')">Send</div>
     <div class="middleButton" data-task-action="accept" onclick="window.devTracker?.toolbarAction('accept')">Accept</div>
+    <div class="middleButton" data-task-action="model" role="button" tabindex="0" aria-label="Model" onclick="window.devTracker?.toolbarAction('model')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">Model</div>
+    <div class="middleButton" data-task-action="review" role="button" tabindex="0" aria-label="Review" onclick="window.devTracker?.toolbarAction('review')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">Review</div>
+    <div class="middleButton" data-task-action="power" role="button" tabindex="0" aria-label="Power Review" onclick="window.devTracker?.toolbarAction('power')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">Power Review</div>
+    <div class="middleButton" data-task-action="star" role="button" tabindex="0" aria-label="Starred messages" onclick="window.devTracker?.toolbarAction('star')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">★</div>
+    <div class="middleButton" data-task-action="attachments" role="button" tabindex="0" aria-label="Attachments" onclick="window.devTracker?.toolbarAction('attachments')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">📎</div>
+    <div class="middleButton" data-task-action="screenshot" style="color:#e33" role="button" tabindex="0" aria-label="Annotated screenshot" onclick="window.devTracker?.toolbarAction('screenshot')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">↘</div>
+    <div class="middleButton" data-task-action="infographic" role="button" tabindex="0" aria-label="Changes infographic" onclick="window.devTracker?.toolbarAction('infographic')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">ⓘ</div>
+    <div class="middleButton" data-task-action="reviews" role="button" tabindex="0" aria-label="Reviews Valid? Fix" onclick="window.devTracker?.toolbarAction('reviews')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click()}">Reviews Valid? Fix</div>
 </div>
 <div class="toolbar hidden" id=fileToolbar1 style="--display: none">
     <!--
