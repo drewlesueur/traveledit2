@@ -4,7 +4,6 @@ import (
 	"context"
 	"crypto/md5"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -12,8 +11,13 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 )
+
+// File contents can be shared by otherwise independent per-user handlers.
+// Serialize library writes across handlers as well as within each workspace.
+var fileSaveMu sync.Mutex
 
 type commandRun struct {
 	cancel context.CancelFunc
@@ -145,9 +149,10 @@ func (h *Handler) shell(w http.ResponseWriter, r *http.Request, quick bool) {
 	h.runs[id] = run
 	h.mu.Unlock()
 	output, runErr := cmd.CombinedOutput()
-	// WaitDelay means the shell exited but a child still holds an output pipe.
-	// CommandContext no longer calls Cancel after the shell has exited.
-	if errors.Is(runErr, exec.ErrWaitDelay) {
+	// CommandContext no longer calls Cancel once the shell has exited. On a
+	// failed exit, Go reports the exit error even if WaitDelay also expired
+	// waiting for a child that still holds an output pipe.
+	if runErr != nil {
 		_ = cmd.Cancel()
 	}
 	close(run.done)
@@ -200,15 +205,20 @@ func (h *Handler) saveLoad(w http.ResponseWriter, r *http.Request) {
 		// Serialize the checksum read and write so two saves cannot both accept
 		// the same old version and silently overwrite each other.
 		h.mu.Lock()
+		fileSaveMu.Lock()
 		locked := true
+		unlock := func() {
+			fileSaveMu.Unlock()
+			h.mu.Unlock()
+			locked = false
+		}
 		defer func() {
 			if locked {
-				h.mu.Unlock()
+				unlock()
 			}
 		}()
 		fail := func(message string, code int) {
-			h.mu.Unlock()
-			locked = false
+			unlock()
 			http.Error(w, message, code)
 		}
 		if h.closed {
@@ -237,8 +247,7 @@ func (h *Handler) saveLoad(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		err := os.WriteFile(target, []byte(content), 0644)
-		h.mu.Unlock()
-		locked = false
+		unlock()
 		w.Header().Set("Content-Type", "application/json")
 		response := map[string]any{"saved": err == nil}
 		if err != nil {

@@ -113,6 +113,12 @@ func TestConcurrentDiffSavesRejectStaleVersion(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer h.Close()
+	other, err := New(Config{MountPath: "/editor", EnableEditor: true, Directory: root})
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer other.Close()
+	handlers := []*Handler{h, other}
 	start := make(chan struct{})
 	results := make(chan int, 16)
 	for i := 0; i < cap(results); i++ {
@@ -123,7 +129,7 @@ func TestConcurrentDiffSavesRejectStaleVersion(t *testing.T) {
 			r := httptest.NewRequest("POST", "/editor/saveload?fullpath="+url.QueryEscape(target), strings.NewReader(body.Encode()))
 			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			w := httptest.NewRecorder()
-			h.ServeHTTP(w, r)
+			handlers[i%len(handlers)].ServeHTTP(w, r)
 			results <- w.Code
 		}(i)
 	}
@@ -144,22 +150,29 @@ func TestConcurrentDiffSavesRejectStaleVersion(t *testing.T) {
 }
 
 func TestShellCleansUpChildHoldingOutputPipe(t *testing.T) {
-	root := t.TempDir()
-	h, err := New(Config{MountPath: "/editor", EnableEditor: true, Directory: root})
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer h.Close()
-	// The shell exits immediately, while its child inherits the output pipe.
-	// Without cleanup after WaitDelay that child would outlive the request.
-	command := "(sleep 2; printf leaked > leaked) &"
-	w := request(h, "GET", "/editor/myshell?cmd="+url.QueryEscape(command), "")
-	if w.Code != 200 {
-		t.Fatalf("shell: %d %s", w.Code, w.Body.String())
-	}
-	time.Sleep(1500 * time.Millisecond)
-	if _, err := os.Stat(filepath.Join(root, "leaked")); !os.IsNotExist(err) {
-		t.Fatalf("child survived completed shell request: %v", err)
+	for _, exit := range []string{"", " exit 1"} {
+		t.Run("shell"+exit, func(t *testing.T) {
+			root := t.TempDir()
+			h, err := New(Config{MountPath: "/editor", EnableEditor: true, Directory: root})
+			if err != nil {
+				t.Fatal(err)
+			}
+			defer h.Close()
+			// An unsuccessful exit takes precedence over ErrWaitDelay in Go's
+			// returned error, even when a child keeps the output pipe open.
+			command := "(sleep 2; printf leaked > leaked) &" + exit
+			w := request(h, "GET", "/editor/myshell?cmd="+url.QueryEscape(command), "")
+			if exit == "" && w.Code != 200 {
+				t.Fatalf("shell: %d %s", w.Code, w.Body.String())
+			}
+			if exit != "" && w.Code != 500 {
+				t.Fatalf("failed shell: %d %s", w.Code, w.Body.String())
+			}
+			time.Sleep(1500 * time.Millisecond)
+			if _, err := os.Stat(filepath.Join(root, "leaked")); !os.IsNotExist(err) {
+				t.Fatalf("child survived completed shell request: %v", err)
+			}
+		})
 	}
 }
 
