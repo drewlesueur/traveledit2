@@ -38,3 +38,29 @@ drawBoxCharacter({ fillRect(x, y, w, h) { for (let row = y; row < y + h; row++) 
 const paintedRows = new Set([...scaledPixels].map(point => Number(point.split(',')[1])));
 assert.equal(paintedRows.size, 3, 'three backing pixels keep a line visible on the scaled editor canvas');
 assert.equal(scaledPixels.size, 22 * 3);
+
+for (const [char, rounded] of [['┌', '╭'], ['┐', '╮'], ['└', '╰'], ['┘', '╯']]) {
+  function draw(value) {
+    const pixels = new Set();
+    drawBoxCharacter({ fillRect(x, y, w, h) {
+      for (let row = y; row < y + h; row++) for (let col = x; col < x + w; col++) {
+        const key = col + ',' + row;
+        assert.ok(!pixels.has(key), 'rounded corners do not darken from overdraw'); pixels.add(key);
+      }
+    } }, value, 0, 0, 22, 46, 3);
+    return pixels;
+  }
+  const pixels = draw(char);
+  assert.ok(!pixels.has('9,21'), 'corner bends away from the old square intersection');
+  assert.deepEqual(draw(rounded), pixels, 'rounded Unicode aliases match the custom corner');
+  const connected = new Set(), queue = [pixels.values().next().value];
+  while (queue.length) {
+    const key = queue.pop();
+    if (connected.has(key) || !pixels.has(key)) continue;
+    connected.add(key);
+    const [x, y] = key.split(',').map(Number);
+    queue.push((x - 1) + ',' + y, (x + 1) + ',' + y, x + ',' + (y - 1), x + ',' + (y + 1));
+  }
+  assert.equal(connected.size, pixels.size, 'rounded corner joins both arms without gaps');
+}
+console.log('Rounded canvas corner checks passed');

@@ -5,7 +5,7 @@
   // Directions are north, east, south, west. These are cell graphics, not
   // font glyphs: adjacent cells share the same snapped pixel boundary.
   const boxArms = Object.freeze({ '─': 10, '│': 5, '┌': 6, '┐': 12, '└': 3, '┘': 9,
-    '├': 7, '┤': 13, '┬': 14, '┴': 11, '┼': 15 });
+    '├': 7, '┤': 13, '┬': 14, '┴': 11, '┼': 15, '╭': 6, '╮': 12, '╰': 3, '╯': 9 });
   const isBoxCharacter = char => Object.hasOwn(boxArms, char);
   function drawBoxCharacter(context, char, x, y, width, height, minimumStroke = 1) {
     if (!isBoxCharacter(char)) return false;
@@ -17,6 +17,28 @@
     const centerY = top + Math.floor((bottom - top - stroke) / 2);
     const fill = (a, b, w, h) => { if (w > 0 && h > 0) context.fillRect(a, b, w, h); };
     const arms = boxArms[char];
+    if ([6, 12, 3, 9].includes(arms)) {
+      const radius = Math.min(Math.round(Math.min(right - left, bottom - top) * 0.45),
+        right - centerX, centerX + stroke - left, bottom - centerY, centerY + stroke - top);
+      if (radius > stroke) {
+        const east = !!(arms & 2), south = !!(arms & 4);
+        // Rasterize one quarter-ring with non-overlapping rectangles. Keeping
+        // fillRect also supports TravelEdit's remote canvas command stream.
+        for (let row = 0; row < radius; row++) {
+          const dy = radius - row - 0.5;
+          const start = Math.max(0, Math.ceil(radius - Math.sqrt(radius * radius - dy * dy) - 0.5));
+          const inner = radius - stroke;
+          const end = dy >= inner ? radius : Math.min(radius, Math.floor(radius - Math.sqrt(inner * inner - dy * dy) - 0.5) + 1);
+          fill(east ? centerX + start : centerX + stroke - end,
+            south ? centerY + row : centerY + stroke - row - 1, end - start, 1);
+        }
+        if (east) fill(centerX + radius, centerY, right - centerX - radius, stroke);
+        else fill(left, centerY, centerX + stroke - radius - left, stroke);
+        if (south) fill(centerX, centerY + radius, stroke, bottom - centerY - radius);
+        else fill(centerX, top, stroke, centerY + stroke - radius - top);
+        return true;
+      }
+    }
     // Draw the center once, so translucent colors have no darker joins.
     fill(centerX, centerY, stroke, stroke);
     if (arms & 1) fill(centerX, top, stroke, centerY - top);

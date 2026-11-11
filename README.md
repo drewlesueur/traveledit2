@@ -125,3 +125,7 @@ row. Its seven default slots are status, interrupt, voice, bot settings, diff
 review, send, and accept; actions delegate to `devTracker.toolbarAction`. The
 adapter controls visibility and accounts for its height alongside host controls.
 Standalone file and cmd toolbars keep their existing actions.
+
+The four corner characters render as rounded quarter-rings while retaining their
+Unicode values. `╭ ╮ ╰ ╯` are supported as aliases. Straight lines and junctions
+still meet the same cell-edge coordinates.
