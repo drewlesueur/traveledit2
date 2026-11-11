@@ -196,6 +196,22 @@ for (let row = 4; row <= 6; row++) {
 }
 assert.equal(boxedClicks, 3);
 boxedButtons.destroy();
+
+const multirow = createControls();
+const topButton = multirow.button('Model', () => {});
+let accepted = 0;
+const bottomButton = multirow.button('Accept', () => { accepted++; multirow.open('Accept confirmation').button('Cancel', () => {}); });
+multirow.setContent([[topButton], [bottomButton]], { layout: 'rows', style: 'box' });
+const multirowLines = multirow.render({ width: 40, startRow: 4, overlay: true }).lines;
+assert.equal(multirowLines[1], '│ Model │');
+assert.equal(multirowLines[5], '│ Accept │');
+assert.deepEqual(multirow.locate({ node: bottomButton, part: 1, column: 2 }), { row: 9, column: 2 });
+assert.deepEqual(multirow.highlightAt(9, 2), { start: 0, stop: 10 });
+assert.deepEqual(multirow.highlightAt(7, 2), { start: 0, stop: 0 }, 'space between rows has no button');
+multirow.activate(9, 2);
+assert.equal(accepted, 1);
+assert.ok(multirow.render({ width: 40, startRow: 4, overlay: true }).overlay.lines.some(line => line.includes('Accept confirmation')));
+multirow.destroy();
 console.log('Inline TravelEdit boxed-button checks passed');
 
 const highlights = createControls();

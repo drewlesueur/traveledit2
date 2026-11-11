@@ -153,53 +153,57 @@
         if (node?.type === 'button' || node?.type === 'field') regions.push({ row: index, start: start + columnOrigin, stop: stop + columnOrigin, node, text, disabled: disabled || node.disabled });
       }
       function roots() {
-        if (rootLayout === 'row' && buttonStyle === 'box' && content.length) {
-          const cells = content.map(group => {
-            const segments = group.type === 'segmented' ? group.segments : [group];
-            let offset = 0;
-            const parts = segments.map((node, index) => {
-              const value = node.type === 'button' ? node.label : node.text;
-              const label = String(typeof value === 'function' ? value() : value);
-              const inner = measure(label) + 2, start = offset;
-              offset += inner + 1;
-              return { node, label, inner, start, stop: offset + (index === segments.length - 1 ? 1 : 0) };
+        const groups = rootLayout === 'rows' ? content : [content];
+        for (const [groupIndex, nodes] of groups.entries()) {
+          if (groupIndex) row('');
+          if ((rootLayout === 'row' || rootLayout === 'rows') && buttonStyle === 'box' && nodes.length) {
+            const cells = nodes.map(group => {
+              const segments = group.type === 'segmented' ? group.segments : [group];
+              let offset = 0;
+              const parts = segments.map((node, index) => {
+                const value = node.type === 'button' ? node.label : node.text;
+                const label = String(typeof value === 'function' ? value() : value);
+                const inner = measure(label) + 2, start = offset;
+                offset += inner + 1;
+                return { node, label, inner, start, stop: offset + (index === segments.length - 1 ? 1 : 0) };
+              });
+              return { group, parts, width: offset + 1, lines: [
+                '┌' + parts.map(part => '─'.repeat(part.inner)).join('┬') + '┐',
+                '│' + parts.map(part => ' ' + part.label + ' ').join('│') + '│',
+                '└' + parts.map(part => '─'.repeat(part.inner)).join('┴') + '┘'
+              ] };
             });
-            return { group, parts, width: offset + 1, lines: [
-              '┌' + parts.map(part => '─'.repeat(part.inner)).join('┬') + '┐',
-              '│' + parts.map(part => ' ' + part.label + ' ').join('│') + '│',
-              '└' + parts.map(part => '─'.repeat(part.inner)).join('┴') + '┘'
-            ] };
-          });
-          for (let part = 0; part < 3; part++) {
-            const index = startRow + lines.length;
-            let offset = 0;
-            for (const cell of cells) {
-              for (const segment of cell.parts) if (segment.node.type === 'button') {
-                regions.push({ row: index, start: offset + segment.start, stop: offset + segment.stop,
-                  node: segment.node, part, disabled: cell.group.disabled || segment.node.disabled });
+            for (let part = 0; part < 3; part++) {
+              const index = startRow + lines.length;
+              let offset = 0;
+              for (const cell of cells) {
+                for (const segment of cell.parts) if (segment.node.type === 'button') {
+                  regions.push({ row: index, start: offset + segment.start, stop: offset + segment.stop,
+                    node: segment.node, part, disabled: cell.group.disabled || segment.node.disabled });
+                }
+                offset += cell.width + 1;
               }
-              offset += cell.width + 1;
+              row(cells.map(cell => cell.lines[part]).join(' '));
             }
-            row(cells.map(cell => cell.lines[part]).join(' '));
+            continue;
           }
-          return;
-        }
-        if (rootLayout === 'row' && content.length) {
-          const index = startRow + lines.length;
-          let text = '';
-          for (const node of content) {
-            if (text) text += ' ';
-            const start = measure(text);
-            const value = node.type === 'button' ? node.label : node.text;
-            text += String(typeof value === 'function' ? value() : value);
-            if (node.type === 'button') regions.push({ row: index, start, stop: measure(text), node, disabled: node.disabled });
+          if ((rootLayout === 'row' || rootLayout === 'rows') && nodes.length) {
+            const index = startRow + lines.length;
+            let text = '';
+            for (const node of nodes) {
+              if (text) text += ' ';
+              const start = measure(text);
+              const value = node.type === 'button' ? node.label : node.text;
+              text += String(typeof value === 'function' ? value() : value);
+              if (node.type === 'button') regions.push({ row: index, start, stop: measure(text), node, disabled: node.disabled });
+            }
+            // Keep the entire row; the host editor supplies horizontal scrolling.
+            row(text); continue;
           }
-          // Keep the entire row; the host editor supplies horizontal scrolling.
-          row(text); return;
-        }
-        for (const node of content) {
-          const text = clip(node.type === 'button' ? node.label : node.text, width);
-          row(text, node, 0, Array.from(text).length);
+          for (const node of nodes) {
+            const text = clip(node.type === 'button' ? node.label : node.text, width);
+            row(text, node, 0, Array.from(text).length);
+          }
         }
       }
       function box(panel = popup, panelWidth = width) {
@@ -229,7 +233,10 @@
       }
       // Insert the popup above its trigger when there is less room below it.
       const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length + 2 : 1), 2) : 0;
-      const above = popup && startRow + (rootLayout === 'row' ? Math.min(1, content.length) * (buttonStyle === 'box' ? 3 : 1) : content.length) + boxHeight >= viewportStart + viewportRows;
+      const rowHeight = buttonStyle === 'box' ? 3 : 1;
+      const rootHeight = rootLayout === 'rows' ? content.length * rowHeight + Math.max(0, content.length - 1)
+        : rootLayout === 'row' ? Math.min(1, content.length) * rowHeight : content.length;
+      const above = popup && startRow + rootHeight + boxHeight >= viewportStart + viewportRows;
       let floating = null;
       const overlays = [];
       if (overlay) {
