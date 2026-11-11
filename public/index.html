@@ -8690,6 +8690,8 @@ var renderDuration = 0
 var renderCount = 0
 var rendersInLastSecond = 0
 function renderInternal() {
+    // Keep cell graphics at least one CSS pixel thick when the canvas is scaled.
+    const boxStrokeWidth = Math.max(1, Math.ceil(c.width / (parseFloat(c.style.width) || c.width)))
     // note: any time we call expandTabIndex (should not use theLine but should  use something like `fx.lines[y + fx.offsetY] || ""`)
     // (the selectedRegions part seems fine)
     
@@ -9362,6 +9364,9 @@ function renderInternal() {
             } else if (chr == "\u2003") {
                 t.fillStyle = "teal"
                 t.fillText("•", x*fontWidth, y*fontHeight + fontOffsetY)
+            } else if (window.TravelEditUI?.isBoxCharacter(chr)) {
+                t.fillStyle = "deepskyblue"
+                TravelEditUI.drawBoxCharacter(t, chr, x*fontWidth, y*fontHeight, fontWidth, fontHeight, boxStrokeWidth)
             } else if (chr > "\xff") {
                 t.fillStyle = "deepskyblue"
                 t.fillText(chr, x*fontWidth, y*fontHeight + fontOffsetY)

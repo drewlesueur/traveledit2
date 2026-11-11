@@ -2,6 +2,29 @@
 // call activate(row, column) when the user activates the editor cursor.
 (function (host) {
   'use strict';
+  // Directions are north, east, south, west. These are cell graphics, not
+  // font glyphs: adjacent cells share the same snapped pixel boundary.
+  const boxArms = Object.freeze({ '─': 10, '│': 5, '┌': 6, '┐': 12, '└': 3, '┘': 9,
+    '├': 7, '┤': 13, '┬': 14, '┴': 11, '┼': 15 });
+  const isBoxCharacter = char => Object.hasOwn(boxArms, char);
+  function drawBoxCharacter(context, char, x, y, width, height, minimumStroke = 1) {
+    if (!isBoxCharacter(char)) return false;
+    const left = Math.round(x), top = Math.round(y);
+    const right = Math.round(x + width), bottom = Math.round(y + height);
+    if (right <= left || bottom <= top) return true;
+    const stroke = Math.min(right - left, bottom - top, Math.max(1, Math.ceil(minimumStroke), Math.round(Math.min(right - left, bottom - top) / 12)));
+    const centerX = left + Math.floor((right - left - stroke) / 2);
+    const centerY = top + Math.floor((bottom - top - stroke) / 2);
+    const fill = (a, b, w, h) => { if (w > 0 && h > 0) context.fillRect(a, b, w, h); };
+    const arms = boxArms[char];
+    // Draw the center once, so translucent colors have no darker joins.
+    fill(centerX, centerY, stroke, stroke);
+    if (arms & 1) fill(centerX, top, stroke, centerY - top);
+    if (arms & 2) fill(centerX + stroke, centerY, right - centerX - stroke, stroke);
+    if (arms & 4) fill(centerX, centerY + stroke, stroke, bottom - centerY - stroke);
+    if (arms & 8) fill(left, centerY, centerX - left, stroke);
+    return true;
+  }
   function createControls({ onChange = () => {}, onClose = () => {} } = {}) {
     let content = [], rootLayout = 'column', buttonStyle = 'plain', stack = [], regions = [], controlRows = new Set(), firstAction = null, activating = null;
     const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
@@ -184,6 +207,6 @@
       destroy() { closeAll(); content = []; regions = []; controlRows.clear(); }
     };
   }
-  host.TravelEditUI = { createControls };
+  host.TravelEditUI = { createControls, isBoxCharacter, drawBoxCharacter };
   if (typeof module !== 'undefined' && module.exports) module.exports = host.TravelEditUI;
 })(typeof window === 'undefined' ? globalThis : window);

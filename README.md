@@ -112,3 +112,10 @@ activation falls through to the native text editor rather than closing the popup
 The host owns input handling and keeps these edits separate from its document.
 `note(text)`, `setDisabled(boolean)`, and `destroy()` cover status, pending actions,
 and disposal. Run `node test-text-controls.js` for component checks.
+
+Box-drawing characters `─ │ ┌ ┐ └ ┘ ├ ┤ ┬ ┴ ┼` are rendered as pixel-aligned
+cell segments by `TravelEditUI.drawBoxCharacter`. The underlying text remains
+Unicode. `minimumStroke` lets a scaled canvas keep lines at least one CSS pixel
+thick; the native editor supplies its backing-to-display ratio. Other characters
+continue through the selected font. Run `node test-box-drawing.js` to check joins,
+corner directions, and scaling without a browser.
