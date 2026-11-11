@@ -136,3 +136,8 @@ still meet the same cell-edge coordinates.
 with DOM rendering for host toolbars. Use `setAnchor(element)` to position the
 popup above its toolbar button; Escape or clicking outside closes it. Hosts
 supply the popup styles and actions. The text renderer remains independent.
+
+For a split control in a boxed text row, use
+`ui.segmented([ui.button('Review', openReview), ui.button('⚙', openOptions)])`.
+Segments share one outline and have independent actions, highlights, and disabled
+states. Set the group's `disabled` property to disable all segments together.

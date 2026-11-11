@@ -51,6 +51,7 @@
     let content = [], rootLayout = 'column', buttonStyle = 'plain', stack = [], regions = [], controlRows = new Set(), firstAction = null, activating = null;
     let fieldBoxes = [];
     const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
+    const segmented = segments => ({ type: 'segmented', segments, disabled: false });
     function refresh({ focus = false } = {}) { onChange({ focus }); }
     function closeAll({ focus = false } = {}) {
       const hadPopup = stack.length > 0; stack = [];
@@ -111,16 +112,30 @@
       }
       function roots() {
         if (rootLayout === 'row' && buttonStyle === 'box' && content.length) {
-          const cells = content.map(node => {
-            const value = node.type === 'button' ? node.label : node.text;
-            const label = String(typeof value === 'function' ? value() : value);
-            return { node, width: measure(label) + 4, lines: ['┌' + '─'.repeat(measure(label) + 2) + '┐', '│ ' + label + ' │', '└' + '─'.repeat(measure(label) + 2) + '┘'] };
+          const cells = content.map(group => {
+            const segments = group.type === 'segmented' ? group.segments : [group];
+            let offset = 0;
+            const parts = segments.map((node, index) => {
+              const value = node.type === 'button' ? node.label : node.text;
+              const label = String(typeof value === 'function' ? value() : value);
+              const inner = measure(label) + 2, start = offset;
+              offset += inner + 1;
+              return { node, label, inner, start, stop: offset + (index === segments.length - 1 ? 1 : 0) };
+            });
+            return { group, parts, width: offset + 1, lines: [
+              '┌' + parts.map(part => '─'.repeat(part.inner)).join('┬') + '┐',
+              '│' + parts.map(part => ' ' + part.label + ' ').join('│') + '│',
+              '└' + parts.map(part => '─'.repeat(part.inner)).join('┴') + '┘'
+            ] };
           });
           for (let part = 0; part < 3; part++) {
             const index = startRow + lines.length;
             let offset = 0;
             for (const cell of cells) {
-              if (cell.node.type === 'button') regions.push({ row: index, start: offset, stop: offset + cell.width, node: cell.node, part, disabled: cell.node.disabled });
+              for (const segment of cell.parts) if (segment.node.type === 'button') {
+                regions.push({ row: index, start: offset + segment.start, stop: offset + segment.stop,
+                  node: segment.node, part, disabled: cell.group.disabled || segment.node.disabled });
+              }
               offset += cell.width + 1;
             }
             row(cells.map(cell => cell.lines[part]).join(' '));
@@ -199,7 +214,7 @@
     }
     function hit(row, column) { return regions.find(region => region.row === row && column >= region.start && column < region.stop); }
     return {
-      button, open, refresh, closeAll, render,
+      button, segmented, open, refresh, closeAll, render,
       setContent(nodes, { layout = 'column', style = 'plain' } = {}) { content = nodes; rootLayout = layout; buttonStyle = style; },
       get isOpen() { return stack.length > 0; },
       get focusTarget() { return firstAction; },
