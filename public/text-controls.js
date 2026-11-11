@@ -47,6 +47,18 @@
     if (arms & 8) fill(left, centerY, centerX - left, stroke);
     return true;
   }
+  function selectControl(popup, open, refresh, label, options, value, change) {
+    const choices = options.map(option => typeof option === 'string' ? { value: option, label: option } : option);
+    popup.button(() => label + ': ' + (choices.find(option => option.value === value)?.label ?? value) + ' ▾', () => {
+      const menu = open(label, { parent: popup });
+      menu.button('< Back', () => menu.close());
+      for (const option of choices) menu.button(() => (option.value === value ? '● ' : '○ ') + option.label, () => {
+        value = option.value; change?.(value); menu.close(); refresh();
+      }, { disabled: option.disabled });
+      refresh();
+    });
+    return { get value() { return value; }, setValue(next) { value = next; refresh(); } };
+  }
   function createControls({ onChange = () => {}, onClose = () => {}, onFieldActivate = () => {} } = {}) {
     let content = [], rootLayout = 'column', buttonStyle = 'plain', stack = [], regions = [], controlRows = new Set(), firstAction = null, activating = null;
     let fieldBoxes = [];
@@ -74,6 +86,7 @@
           popup.items.push(node); return node;
         },
         note(text) { const node = { type: 'text', text }; popup.items.push(node); return node; },
+        select(label, options, value, change) { return selectControl(popup, open, refresh, label, options, value, change); },
         radioGroup(label, options, value, change) {
           popup.note(label);
           const choices = options.map(option => typeof option === 'string' ? { value: option, label: option } : option);
@@ -212,7 +225,9 @@
       firstAction = regions.find(region => !region.disabled && (!popup || popup.items.includes(region.node))) || regions.find(region => !region.disabled) || null;
       return { lines, overlay: floating };
     }
-    function hit(row, column) { return regions.find(region => region.row === row && column >= region.start && column < region.stop); }
+    // Popup regions are appended after the underlying row and take precedence
+    // when a compact menu overlays one of its buttons.
+    function hit(row, column) { return regions.findLast(region => region.row === row && column >= region.start && column < region.stop); }
     return {
       button, segmented, open, refresh, closeAll, render,
       setContent(nodes, { layout = 'column', style = 'plain' } = {}) { content = nodes; rootLayout = layout; buttonStyle = style; },
@@ -335,6 +350,7 @@
           popup.note(label); const node = { type: 'field', label, value: String(value ?? ''), multiline: !!options.multiline, onInput: options.onInput, onBlur: options.onBlur };
           popup.items.push(node); return node;
         },
+        select(label, options, value, change) { return selectControl(popup, open, refresh, label, options, value, change); },
         radioGroup(label, options, value, change) {
           popup.note(label);
           for (const option of options.map(option => typeof option === 'string' ? { value: option, label: option } : option)) {

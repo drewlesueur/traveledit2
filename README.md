@@ -141,3 +141,8 @@ For a split control in a boxed text row, use
 `ui.segmented([ui.button('Review', openReview), ui.button('⚙', openOptions)])`.
 Segments share one outline and have independent actions, highlights, and disabled
 states. Set the group's `disabled` property to disable all segments together.
+
+Both popup surfaces provide `popup.select(label, options, value, onChange)`
+for a compact current-value button with a nested choice menu. Options may be
+strings or `{value, label, disabled}` objects. Picking an option calls `onChange`
+and returns to the parent popup; the current choice is marked in the submenu.
