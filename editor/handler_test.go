@@ -55,8 +55,10 @@ func TestMountAssetsAndIsolation(t *testing.T) {
 		if strings.Contains(w.Body.String(), `<script src="https://unpkg.com/sval`) {
 			t.Fatal("text mode loaded optional script interpreter")
 		}
-		if w := request(h, "GET", "/editor/tepublic/md52.js", ""); w.Code != 200 {
-			t.Fatal("embedded asset not served")
+		for _, asset := range []string{"md52.js", "text-controls.js"} {
+			if w := request(h, "GET", "/editor/tepublic/"+asset, ""); w.Code != 200 {
+				t.Fatalf("embedded asset %s not served", asset)
+			}
 		}
 		for _, url := range []string{"/editors/", "/editor/tepublic/../handler.go", "/editor/tepublic/missing"} {
 			if w := request(h, "GET", url, ""); w.Code != 404 {

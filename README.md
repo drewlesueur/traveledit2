@@ -39,7 +39,7 @@ message reader/composer). Provide this adapter when using the default assets
 with task tabs; a custom `Assets` filesystem can include its own adapter instead.
 The library does not contain task credentials, a task database, or a message
 service. `Assets` can optionally provide an `fs.FS` with additional fonts/assets;
-the default embeds `index.html`, `md52.js`, and the standalone login form from
+the default embeds `index.html`, `md52.js`, `text-controls.js`, and the standalone login form from
 the same `public` directory used by the standalone editor. No source checkout
 is read at runtime by the default embedded handler.
 
@@ -61,3 +61,33 @@ Run `go test -race ./editor ./public` for package checks and
 `node test-directory-reload.js` for duplicate-directory loading and refresh checks.
 Run `node test-editor-ui.js` for host-control sizing checks.
 The legacy executable's existing example names currently require `go test -vet=off ./...`.
+
+## Reusable text controls
+
+Both the standalone editor and embedded editor load `public/text-controls.js`.
+`window.TravelEditUI` provides task-independent buttons, control bars, and nested
+popup menus. It does not call a model API or depend on the DevTracker adapter.
+
+```js
+const trigger = TravelEditUI.button('[ Tools ▾ ]', null, { trigger: true });
+document.body.append(trigger);
+const menu = TravelEditUI.createMenu(trigger);
+trigger.onclick = () => {
+    if (menu.isOpen) return menu.closeAll();
+    const tools = menu.open('Tools');
+    const options = tools.button('Display ›', () => {
+        const display = menu.open('Display', { parent: tools, anchor: options });
+        display.radioGroup('Density', ['compact', 'comfortable'], 'compact', value => {
+            document.body.dataset.density = value;
+        });
+        display.button('[ Done ]', () => menu.closeAll(), { separator: true });
+    }, { hasPopup: true });
+};
+// When removing this UI: menu.destroy(); trigger.remove();
+```
+
+A popup also provides `note(text, {role})`, `setDisabled(boolean)`, `reposition()`,
+and `close()`. Menus handle outside clicks, Escape, focus restoration, viewport
+changes, and disposal of their listeners and resize observers. Presentation can
+be customized with `--teui-font`, `--teui-background`, `--teui-color`, and
+`--teui-shadow`. Run `node test-text-controls.js` for the shared component checks.
