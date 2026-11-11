@@ -4139,6 +4139,7 @@ function updateCursorXY(file) {
     if (!file) {
         file = fx
     }
+    if (window.devTracker && file.fileMode == "devtracker") theText.readOnly = !devTracker.canEdit(file)
     cursorX = (fx.cursorColIndex - fx.offsetX) * fontWidth
     cursorY = (fx.cursorLineIndex - fx.offsetY) * fontHeight
 }
@@ -4509,6 +4510,7 @@ function getShellCodeForRunningFile(filename, lines, theDefault) {
 
 
 function runScript() {
+    if (window.devTracker?.run?.()) return
     clearLog2()
     var sl = getSelectedLines(fx)
     var theScriptLines = sl.lines
@@ -7573,7 +7575,7 @@ function handleBlur() {
 
 // pressing the save button disables autosave
 function saveWrapper() {
-    if (window.devTracker && devTracker.enter()) return
+    if (window.devTracker?.run?.()) return
     if (fx.fileMode == "shell") {
         // the save button turns into run when it's a "shell" file
         if (fx.selectedRegions.length) {
@@ -7702,10 +7704,7 @@ var keyMaping = {
     "ArrowRight": "\x1b[C",
 }
 function handleKeydown(e) {
-    if (window.devTracker && fx.fileMode == "devtracker" && !["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "Home", "End", "PageUp", "PageDown", "Tab"].includes(e.key)) {
-        if (!(e.ctrlKey || e.metaKey) || e.key.toLowerCase() != "c") e.preventDefault()
-        return
-    }
+    if (window.devTracker?.keyDown?.(e)) return
     // TODO: this is where you could wrap or unwrap quotes, etc
     if (fx.fileMode == "terminal") {
         var mapped = e.key
@@ -7946,6 +7945,7 @@ function handleQuickType() {
 
 var dirtyInput = false
 function saveLine() {
+    if (window.devTracker?.input?.()) return
     dirtyInput = true
     lastAction = "type"
     acWord = null
@@ -8373,7 +8373,7 @@ function render() {
 	    	// if (agressiveRender || (touchCount == 0 && document.activeElement == theText)) {
 	    	// I think count was an optimization that we no longer need plus touch cause problems when you press and hold to delete the end of the line or to the beggining of the line
 	    	if (agressiveRender || (document.activeElement == theText)) {
-                renderTheText(cursorLine)
+                renderTheText(fx.fileMode == "devtracker" ? (fx.lines[fx.cursorLineIndex] || "") : cursorLine)
             }
         }
 
@@ -8511,11 +8511,15 @@ function renderSaves() {
     } else if (fx.fileMode == "terminal") {
         // TODO: consider not setting this every render
         saveButton.innerText = "run"
+    } else if (fx.fileMode == "devtracker") {
+        saveButton.style.backgroundColor = ""
+        saveButton.innerText = "run"
     }
 }
 
 var theTextValue = ""
 function renderTheText(v) {
+    if (window.devTracker && fx.fileMode == "devtracker") theText.readOnly = !devTracker.canEdit(fx)
     // TODO: why when i uncomment the if
     // and i type and hit enter it duplicates the line?
     // if (v != theTextValue) {
@@ -13975,6 +13979,7 @@ function touchAreasLongPress(e, state) {
             state.selectAction(true, true)
         },
         "1right": function () {
+            if (window.devTracker?.run?.()) return
             // should we do this newline?
             // make it run, enter.
             if (fx.fileMode == "shell" || fx.fileMode == "terminal") {

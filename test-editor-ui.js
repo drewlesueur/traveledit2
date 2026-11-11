@@ -36,3 +36,24 @@ delete sizing.devTracker;
 sizing.setCanvasHeightAccordingly();
 assert.equal(sizing.result, 1710);
 console.log('Shared TravelEdit host-control sizing checks passed');
+
+// All native Run entry points delegate task sends; ordinary shell Run keeps
+// its existing command path.
+let sends = 0, commands = [];
+const actions = {
+  devTracker: { run() { sends++; return true; } },
+  handleTouchAreas(event, mapping) { mapping['1right'](); },
+  fx: { fileMode: 'shell', selectedRegions: [], lines: ['printf fixture'], cursorLineIndex: 0 },
+  runShellCommand(command) { commands.push(command); },
+};
+actions.window = actions;
+vm.createContext(actions);
+for (const name of ['runScript', 'saveWrapper', 'touchAreasLongPress']) {
+  vm.runInContext(implementation(name), actions);
+}
+actions.runScript(); actions.saveWrapper(); actions.touchAreasLongPress({}, {});
+assert.equal(sends, 3);
+actions.devTracker.run = () => false;
+actions.saveWrapper();
+assert.deepEqual(commands, ['printf fixture']);
+console.log('Shared TravelEdit task Run routing checks passed');
