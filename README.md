@@ -90,5 +90,10 @@ cursor row and column. A popup can open another popup with `{ parent: tools }`;
 `close()` returns to its parent. `capture()` and `locate()` preserve a control
 cursor when surrounding text moves. Hosts own redraws, editable boundaries, and
 focus/scroll policy; `focusTarget` identifies the first active choice.
+`field(label, value, { multiline })` adds editable text rows to a popup. A host can
+use `fieldAt(row)` to find the field and its line index, update its `value`, then
+`refresh()`; `capture()`/`locate()` also preserve cursors in those fields. Field
+activation falls through to the native text editor rather than closing the popup.
+The host owns input handling and keeps these edits separate from its document.
 `note(text)`, `setDisabled(boolean)`, and `destroy()` cover status, pending actions,
 and disposal. Run `node test-text-controls.js` for component checks.

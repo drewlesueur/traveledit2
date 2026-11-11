@@ -20,6 +20,11 @@
         title, items: [], disabled: false,
         get isOpen() { return stack.includes(popup); },
         button(label, action, options) { const node = button(label, action, options); popup.items.push(node); return node; },
+        field(label, value, options = {}) {
+          popup.note(label);
+          const node = { type: 'field', value: String(value ?? ''), multiline: !!options.multiline };
+          popup.items.push(node); return node;
+        },
         note(text) { const node = { type: 'text', text }; popup.items.push(node); return node; },
         radioGroup(label, options, value, change) {
           popup.note(label);
@@ -54,7 +59,7 @@
       };
       function row(text, node, start = 0, stop = text.length, disabled = false) {
         const index = startRow + lines.length; lines.push(text); controlRows.add(index);
-        if (node?.type === 'button') regions.push({ row: index, start, stop, node, disabled: disabled || node.disabled });
+        if (node?.type === 'button' || node?.type === 'field') regions.push({ row: index, start, stop, node, disabled: disabled || node.disabled });
       }
       function roots() {
         for (const node of content) {
@@ -66,6 +71,15 @@
         const inner = Math.max(1, width - 4);
         row('┌' + clip('─ ' + popup.title + ' ', inner).padEnd(inner, '─') + '┐░');
         for (const node of popup.items) {
+          if (node.type === 'field') {
+            // Editable text uses native editor columns, without box padding.
+            const fieldLines = node.value.split('\n');
+            fieldLines.forEach((text, fieldLine) => {
+              row(text, node, 0, Math.max(1, Array.from(text).length + 1), popup.disabled);
+              regions.at(-1).fieldLine = fieldLine;
+            });
+            continue;
+          }
           const text = clip(node.type === 'button' ? node.label : node.text, inner);
           row('│' + text.padEnd(inner, ' ') + '│░', node, 1, inner + 1, popup.disabled);
         }
@@ -73,7 +87,7 @@
         row(' ' + '░'.repeat(inner + 2));
       }
       // Insert the popup above its trigger when there is less room below it.
-      const boxHeight = popup ? popup.items.length + 3 : 0;
+      const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length : 1), 3) : 0;
       const above = popup && startRow + content.length + boxHeight >= viewportStart + viewportRows;
       if (above) { box(); roots(); } else { roots(); if (popup) box(); }
       firstAction = regions.find(region => !region.disabled && (!popup || popup.items.includes(region.node))) || regions.find(region => !region.disabled) || null;
@@ -86,13 +100,15 @@
       get isOpen() { return stack.length > 0; },
       get focusTarget() { return firstAction; },
       isControlRow(row) { return controlRows.has(row); },
-      capture(row, column) { const region = hit(row, column); return region ? { node: region.node, column: column - region.start } : null; },
+      capture(row, column) { const region = hit(row, column); return region ? { node: region.node, fieldLine: region.fieldLine, column: column - region.start } : null; },
       locate(cursor) {
-        const region = cursor && regions.find(region => region.node === cursor.node);
+        const region = cursor && regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine);
         return region ? { row: region.row, column: region.start + Math.min(cursor.column, region.stop - region.start - 1) } : null;
       },
+      fieldAt(row) { return regions.find(region => region.row === row && region.node.type === 'field' && !region.disabled) || null; },
       activate(row, column) {
         const region = hit(row, column);
+        if (region?.node.type === 'field') return false;
         if (region) { if (!region.disabled) region.node.action?.(); return true; }
         if (stack.length) { closeAll(); return true; }
         return false;
