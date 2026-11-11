@@ -49,16 +49,17 @@
       };
       stack.push(popup); return popup;
     }
-    function render({ startRow = 0, width = 60, viewportStart = 0, viewportRows = 30, measure = text => Array.from(text).length } = {}) {
+    function render({ startRow = 0, width = 60, viewportStart = 0, viewportRows = 30, measure = text => Array.from(text).length, overlay = false } = {}) {
       width = Math.max(6, Math.floor(width));
       const lines = [], popup = stack.at(-1);
+      let rowOrigin = startRow;
       regions = []; controlRows = new Set(); firstAction = null;
       const clip = (text, length) => {
         const chars = Array.from(String(typeof text === 'function' ? text() : text));
         return chars.length > length ? chars.slice(0, Math.max(0, length - 1)).join('') + '…' : chars.join('');
       };
       function row(text, node, start = 0, stop = text.length, disabled = false) {
-        const index = startRow + lines.length; lines.push(text); controlRows.add(index);
+        const index = rowOrigin + lines.length; lines.push(text); controlRows.add(index);
         if (node?.type === 'button' || node?.type === 'field') regions.push({ row: index, start, stop, node, disabled: disabled || node.disabled });
       }
       function roots() {
@@ -102,9 +103,19 @@
       // Insert the popup above its trigger when there is less room below it.
       const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length : 1), 3) : 0;
       const above = popup && startRow + (rootLayout === 'row' ? Math.min(1, content.length) : content.length) + boxHeight >= viewportStart + viewportRows;
-      if (above) { box(); roots(); } else { roots(); if (popup) box(); }
+      let floating = null;
+      if (overlay) {
+        roots();
+        if (popup) {
+          const rootCount = lines.length;
+          const popupRow = above && startRow - boxHeight >= viewportStart ? startRow - boxHeight : startRow + rootCount;
+          rowOrigin = popupRow - rootCount;
+          box();
+          floating = { row: popupRow, column: 0, lines: lines.splice(rootCount) };
+        }
+      } else if (above) { box(); roots(); } else { roots(); if (popup) box(); }
       firstAction = regions.find(region => !region.disabled && (!popup || popup.items.includes(region.node))) || regions.find(region => !region.disabled) || null;
-      return { lines };
+      return { lines, overlay: floating };
     }
     function hit(row, column) { return regions.find(region => region.row === row && column >= region.start && column < region.stop); }
     return {

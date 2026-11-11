@@ -110,3 +110,24 @@ assert.equal(horizontalLines[0], '[ Longer first label ] [ Last action ]', 'one 
 assert.ok(horizontalLines[2].includes('One') && horizontalLines[3].includes('Two'), 'popup choices remain vertical');
 horizontal.destroy();
 console.log('Inline TravelEdit horizontal-control checks passed');
+
+const floating = createControls();
+floating.setContent([floating.button('[ Open ]', () => {})], { layout: 'row' });
+const beforeOverlay = floating.render({ startRow: 10, overlay: true });
+const floatingPopup = floating.open('Settings');
+let overlayClicked = false;
+floatingPopup.button('[ Choose ]', () => { overlayClicked = true; });
+const afterOverlay = floating.render({ startRow: 10, viewportRows: 30, overlay: true });
+assert.deepEqual(afterOverlay.lines, beforeOverlay.lines, 'popup does not insert document rows');
+assert.equal(afterOverlay.overlay.row, 11);
+assert.equal(afterOverlay.overlay.column, 0);
+assert.ok(afterOverlay.overlay.lines[0].includes('Settings'));
+floating.activate(12, 2);
+assert.equal(overlayClicked, true, 'popup hit regions use overlay coordinates');
+const upperOverlay = floating.render({ startRow: 20, viewportRows: 23, overlay: true });
+assert.equal(upperOverlay.overlay.row, 16, 'popup can overlay rows above the trigger');
+assert.deepEqual(upperOverlay.lines, beforeOverlay.lines);
+floating.closeAll();
+assert.equal(floating.render({ startRow: 10, overlay: true }).overlay, null);
+floating.destroy();
+console.log('Inline TravelEdit overlay checks passed');

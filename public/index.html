@@ -8380,7 +8380,7 @@ function render() {
 	    	// if (agressiveRender || (touchCount == 0 && document.activeElement == theText)) {
 	    	// I think count was an optimization that we no longer need plus touch cause problems when you press and hold to delete the end of the line or to the beggining of the line
 	    	if (agressiveRender || (document.activeElement == theText)) {
-                renderTheText(fx.fileMode == "devtracker" ? (fx.lines[fx.cursorLineIndex] || "") : cursorLine)
+                renderTheText(fx.fileMode == "devtracker" ? (window.devTracker?.inputText?.(fx) ?? fx.lines[fx.cursorLineIndex] ?? "") : cursorLine)
             }
         }
 
