@@ -204,11 +204,11 @@ const bottomButton = multirow.button('Accept', () => { accepted++; multirow.open
 multirow.setContent([[topButton], [bottomButton]], { layout: 'rows', style: 'box' });
 const multirowLines = multirow.render({ width: 40, startRow: 4, overlay: true }).lines;
 assert.equal(multirowLines[1], '│ Model │');
-assert.equal(multirowLines[5], '│ Accept │');
-assert.deepEqual(multirow.locate({ node: bottomButton, part: 1, column: 2 }), { row: 9, column: 2 });
-assert.deepEqual(multirow.highlightAt(9, 2), { start: 0, stop: 10 });
-assert.deepEqual(multirow.highlightAt(7, 2), { start: 0, stop: 0 }, 'space between rows has no button');
-multirow.activate(9, 2);
+assert.equal(multirowLines[4], '│ Accept │');
+assert.deepEqual(multirow.locate({ node: bottomButton, part: 1, column: 2 }), { row: 8, column: 2 });
+assert.deepEqual(multirow.highlightAt(8, 2), { start: 0, stop: 10 });
+assert.equal(multirowLines.length, 6, 'control rows have no blank line between them');
+multirow.activate(8, 2);
 assert.equal(accepted, 1);
 assert.ok(multirow.render({ width: 40, startRow: 4, overlay: true }).overlay.lines.some(line => line.includes('Accept confirmation')));
 multirow.destroy();

@@ -154,8 +154,7 @@
       }
       function roots() {
         const groups = rootLayout === 'rows' ? content : [content];
-        for (const [groupIndex, nodes] of groups.entries()) {
-          if (groupIndex) row('');
+        for (const nodes of groups) {
           if ((rootLayout === 'row' || rootLayout === 'rows') && buttonStyle === 'box' && nodes.length) {
             const cells = nodes.map(group => {
               const segments = group.type === 'segmented' ? group.segments : [group];
@@ -234,7 +233,7 @@
       // Insert the popup above its trigger when there is less room below it.
       const boxHeight = popup ? popup.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length + 2 : 1), 2) : 0;
       const rowHeight = buttonStyle === 'box' ? 3 : 1;
-      const rootHeight = rootLayout === 'rows' ? content.length * rowHeight + Math.max(0, content.length - 1)
+      const rootHeight = rootLayout === 'rows' ? content.length * rowHeight
         : rootLayout === 'row' ? Math.min(1, content.length) * rowHeight : content.length;
       const above = popup && startRow + rootHeight + boxHeight >= viewportStart + viewportRows;
       let floating = null;
