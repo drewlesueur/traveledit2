@@ -6987,6 +6987,10 @@ function doTrimPrefix(str, prefix) {
 }
 
 function setSelectionRangeForText(start, end) {
+    if (fx.fileMode == "devtracker") {
+        const selection = window.devTracker?.selectionRange?.(fx, start, end)
+        if (selection) { theText.setSelectionRange(...selection); return }
+    }
     var adjustedStart = u(start)
     var adjustedEnd
     if (start == end) {

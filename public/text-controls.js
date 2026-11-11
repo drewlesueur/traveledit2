@@ -3,7 +3,7 @@
 (function (host) {
   'use strict';
   function createControls({ onChange = () => {}, onClose = () => {} } = {}) {
-    let content = [], rootLayout = 'column', stack = [], regions = [], controlRows = new Set(), firstAction = null;
+    let content = [], rootLayout = 'column', stack = [], regions = [], controlRows = new Set(), firstAction = null, activating = null;
     const button = (label, action, options = {}) => ({ type: 'button', label, action, disabled: !!options.disabled });
     function refresh({ focus = false } = {}) { onChange({ focus }); }
     function closeAll({ focus = false } = {}) {
@@ -11,13 +11,14 @@
       if (hadPopup) { onClose(); refresh({ focus }); }
     }
     function open(title, { parent = null } = {}) {
+      const origin = activating || (parent ? null : stack[0]?.origin);
       if (parent) {
         const index = stack.indexOf(parent);
         if (index < 0) throw new Error('Parent popup is closed');
         stack = stack.slice(0, index + 1);
       } else if (stack.length) { stack = []; onClose(); }
       const popup = {
-        title, items: [], disabled: false,
+        title, parent, origin, items: [], disabled: false,
         get isOpen() { return stack.includes(popup); },
         button(label, action, options) { const node = button(label, action, options); popup.items.push(node); return node; },
         field(label, value, options = {}) {
@@ -49,10 +50,10 @@
       };
       stack.push(popup); return popup;
     }
-    function render({ startRow = 0, width = 60, viewportStart = 0, viewportRows = 30, measure = text => Array.from(text).length, overlay = false } = {}) {
+    function render({ startRow = 0, width = 60, viewportStart = 0, viewportRows = 30, measure = text => Array.from(text).length, overlay = false, viewportColumn = 0 } = {}) {
       width = Math.max(6, Math.floor(width));
       const lines = [], popup = stack.at(-1);
-      let rowOrigin = startRow;
+      let rowOrigin = startRow, columnOrigin = 0;
       regions = []; controlRows = new Set(); firstAction = null;
       const clip = (text, length) => {
         const chars = Array.from(String(typeof text === 'function' ? text() : text));
@@ -60,7 +61,7 @@
       };
       function row(text, node, start = 0, stop = text.length, disabled = false) {
         const index = rowOrigin + lines.length; lines.push(text); controlRows.add(index);
-        if (node?.type === 'button' || node?.type === 'field') regions.push({ row: index, start, stop, node, disabled: disabled || node.disabled });
+        if (node?.type === 'button' || node?.type === 'field') regions.push({ row: index, start: start + columnOrigin, stop: stop + columnOrigin, node, text, disabled: disabled || node.disabled });
       }
       function roots() {
         if (rootLayout === 'row' && content.length) {
@@ -108,10 +109,21 @@
         roots();
         if (popup) {
           const rootCount = lines.length;
-          const popupRow = above && startRow - boxHeight >= viewportStart ? startRow - boxHeight : startRow + rootCount;
-          rowOrigin = popupRow - rootCount;
+          const anchor = popup.parent && popup.origin;
+          const anchorRow = anchor ? anchor.row : startRow;
+          columnOrigin = anchor ? Math.max(0, anchor.start - 1) : Math.max(0, viewportColumn);
+          const needsAbove = anchor ? anchorRow + 1 + boxHeight >= viewportStart + viewportRows : above;
+          const putAbove = needsAbove && anchorRow - boxHeight >= viewportStart;
+          const popupRow = putAbove ? anchorRow - boxHeight : anchor ? anchorRow + 1 : startRow + rootCount;
+          const addAnchor = () => {
+            row(anchor.text);
+            regions.push({ ...anchor, node: anchor.node, disabled: anchor.node.disabled });
+          };
+          rowOrigin = (anchor && !putAbove ? anchorRow : popupRow) - rootCount;
+          if (anchor && !putAbove) addAnchor();
           box();
-          floating = { row: popupRow, column: 0, lines: lines.splice(rootCount) };
+          if (anchor && putAbove) addAnchor();
+          floating = { row: anchor && !putAbove ? anchorRow : popupRow, column: columnOrigin, lines: lines.splice(rootCount) };
         }
       } else if (above) { box(); roots(); } else { roots(); if (popup) box(); }
       firstAction = regions.find(region => !region.disabled && (!popup || popup.items.includes(region.node))) || regions.find(region => !region.disabled) || null;
@@ -133,7 +145,17 @@
       activate(row, column) {
         const region = hit(row, column);
         if (region?.node.type === 'field') return false;
-        if (region) { if (!region.disabled) region.node.action?.(); return true; }
+        if (region) {
+          if (!region.disabled) {
+            const opened = stack.find(popup => popup.origin?.node === region.node);
+            if (opened) opened.close();
+            else {
+              activating = { ...region };
+              try { region.node.action?.(); } finally { activating = null; }
+            }
+          }
+          return true;
+        }
         if (stack.length) { closeAll(); return true; }
         return false;
       },

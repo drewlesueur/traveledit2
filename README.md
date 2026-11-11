@@ -93,6 +93,10 @@ popup's independent `{ row, column, lines }` rectangle. Hit regions use the popu
 absolute position. Hosts can draw that rectangle over their document without
 inserting rows, retaining their underlying text and field values separately.
 
+Activating the same opener again closes its popup. Nested popups retain the opener
+row so the same cursor position also closes a submenu. Overlay popups can use
+`viewportColumn` to stay visible when the document is horizontally scrolled.
+
 The native middle-region tap and Enter activate `file.textControls` at the current
 cursor row and column. A popup can open another popup with `{ parent: tools }`;
 `close()` returns to its parent. `capture()` and `locate()` preserve a control
