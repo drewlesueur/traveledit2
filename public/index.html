@@ -3443,7 +3443,7 @@ function setLastWord(maybeLastWord) {
     }
 }
 function docChanged(preventUndo) {
-    if (window.devTracker && fx.fileMode == "devtracker") { devTracker.redraw(fx); return }
+    if (window.devTracker && fx.fileMode == "devtracker") { devTracker.changed(fx); return }
     fx.version += 1
     setLastWord(getWordAtCursor().word)
     if (!preventUndo) {
@@ -3532,7 +3532,7 @@ function splitGraphemes(theLine) {
 // is being updated, like a splice?
 // maybe you can do a line diff too.
 function updateLineFile(file, index, value) {
-    if (file.fileMode == "devtracker") return file.lines[index == -1 ? file.cursorLineIndex : index]
+    if (file.fileMode == "devtracker") return window.devTracker.updateLine(file, index, value)
     if (index == -1) {
         index = file.cursorLineIndex
     }
@@ -3631,11 +3631,13 @@ function repositionUndo(isUndo) {
 }
 
 function undo() {
+    if (window.devTracker?.undo?.()) return
     fx.undo.index = bind(fx.undo.index-1, 0, fx.undo.index)
     repositionUndo(true)
 }
 
 function redo() {
+    if (window.devTracker?.undo?.(true)) return
     fx.undo.index = bind(fx.undo.index+1, fx.undo.index, fx.undo.stack.length-1)
     repositionUndo(false)
 }
@@ -5591,6 +5593,7 @@ var pasteDebug = false
 var p = []
 
 function pasteLines(localCopyBuffer, unselect, pasteBefore, fromTap, unselectIfCharOneWord) {
+    if (window.devTracker?.canChange?.(fx) === false) return 0
     ghostSelection = null
     if (pasteDebug) {
         p.unshift(new Error().stack)
@@ -5740,6 +5743,7 @@ function copyShenanigans(fn) {
 
 
 function delinternal(preventCopy, preventDeleteWholeLine, preventUndo) {
+    if (window.devTracker?.canChange?.(fx) === false) return
     hasUpdatedSearchTextForReplaceFlow = false
 
     if (fx.selectedRegions.length>0) {
