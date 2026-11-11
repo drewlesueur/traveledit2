@@ -12273,6 +12273,7 @@ function addFile(fullPath, options, id, name) { // hotpink marker
                 // TODO: is this needed, I think duplicateFile should get these?
                 // see also setLines
                 files[i].lines = file.lines
+                files[i].fileMode = file.fileMode
                 files[i].undo = file.undo
                 files[i].fileErrors = file.fileErrors
                 files[i].marginLeft = file.marginLeft
@@ -12855,6 +12856,7 @@ function reloadFile(theFile) {
         for (var i=0; i<files.length; i++) {
             if (files[i].fullPath == theFile.fullPath) {
                 files[i].lines = theFile.lines
+                files[i].fileMode = theFile.fileMode
                 files[i].marginLeft = theFile.marginLeft
                 files[i].undo = theFile.undo
                 files[i].fileErrors = theFile.fileErrors

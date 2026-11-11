@@ -53,5 +53,6 @@ and `-proxypathtrimmed` are honored. `TRAVELEDIT_SCRIPT_URL` overrides the
 host adapter URL.
 The default standalone file/terminal mode remains independent of DevTracker.
 
-Run `go test -race ./editor ./public` for package checks. The legacy executable's
-existing example names currently require `go test -vet=off ./...`.
+Run `go test -race ./editor ./public` for package checks and
+`node test-directory-reload.js` for duplicate-directory loading and refresh checks.
+The legacy executable's existing example names currently require `go test -vet=off ./...`.
