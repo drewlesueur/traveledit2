@@ -334,3 +334,24 @@ anchored.destroy();
 console.log('TravelEdit popup trigger anchoring checks passed');
 
 }
+
+{
+  const ui = createControls();
+  const menu = ui.open('Actions');
+  let label = 'Confirm';
+  menu.button(() => label, () => {});
+  menu.button('[ Cancel ]', () => {});
+  menu.button('○ Choice', () => {});
+  menu.button('[ ] Enabled', () => {});
+  menu.note('Information');
+  let result = ui.render({ width: 40, overlay: true }).overlay.lines.join('\n');
+  assert.ok(result.includes('[ Confirm ]'));
+  assert.ok(result.includes('[ Cancel ]') && !result.includes('[ [ Cancel ] ]'));
+  assert.ok(result.includes('○ Choice') && !result.includes('[ ○ Choice ]'));
+  assert.ok(!result.includes('[ Information ]'));
+  label = 'A very long action label';
+  result = ui.render({ width: 16, overlay: true }).overlay.lines.join('\n');
+  assert.match(result, /\[ A very.*… \]/, 'clipping preserves action brackets');
+  ui.destroy();
+}
+console.log('TravelEdit popup action bracket checks passed');

@@ -205,6 +205,15 @@
           }
         }
       }
+      function popupText(node, limit = Infinity) {
+        const raw = node.type === 'button' ? node.label : node.text;
+        const text = String(typeof raw === 'function' ? raw() : raw ?? '');
+        if (node.type !== 'button' || /^(?:[●○☑☐]|\[[ xX]\])/.test(text) || /▾$/.test(text)) return clip(text, limit);
+        // Action buttons share one presentation, including legacy callers that
+        // already supplied brackets. Keep the closing bracket when clipping.
+        const label = /^\[.*\]$/.test(text) ? text.slice(1, -1).trim() : text;
+        return limit < 4 ? clip('[]', limit) : '[ ' + clip(label, limit - 4) + ' ]';
+      }
       function box(panel = popup, panelWidth = width) {
         const popup = panel;
         const inner = Math.max(3, panelWidth - 4, ...popup.items.filter(node => node.type === 'field')
@@ -225,7 +234,7 @@
             fieldBoxes.push({ node, top, bottom: rowOrigin + lines.length - 1, start: columnOrigin + 1, stop: columnOrigin + inner + 1, disabled: popup.disabled });
             continue;
           }
-          const text = clip(node.type === 'button' ? node.label : node.text, inner);
+          const text = popupText(node, inner);
           row('│' + text.padEnd(inner, ' ') + '│', node, 1, inner + 1, popup.disabled);
         }
         row('└' + '─'.repeat(inner) + '┘');
@@ -244,10 +253,9 @@
         for (const panel of stack) {
           const parent = overlays.at(-1);
           const height = panel.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length + 2 : 1), 2);
-          const value = value => String(typeof value === 'function' ? value() : value ?? '');
           const naturalWidth = Math.max(3, measure('─ ' + panel.title + ' '), ...panel.items.map(node =>
             node.type === 'field' ? Math.max(...node.value.split('\n').map(text => measure(text) + 3))
-              : measure(value(node.type === 'button' ? node.label : node.text)))) + 4;
+              : measure(popupText(node)))) + 4;
           const panelWidth = Math.min(width, naturalWidth);
           // Resolve the opener again on every render: it can move when another
           // control changes its label or the document is scrolled/reflowed.
