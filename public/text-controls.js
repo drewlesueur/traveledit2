@@ -244,22 +244,24 @@
         for (const panel of stack) {
           const parent = overlays.at(-1);
           const height = panel.items.reduce((height, node) => height + (node.type === 'field' ? node.value.split('\n').length + 2 : 1), 2);
-          let panelWidth = width;
-          let panelRow, panelColumn;
-          if (!parent) {
-            panelColumn = Math.max(0, viewportColumn);
-            const panelAbove = startRow + rootCount + height >= viewportStart + viewportRows;
-            panelRow = panelAbove && startRow - height >= viewportStart ? startRow - height : startRow + rootCount;
-          } else {
-            // Anchor to the current trigger region, not its old screen position:
-            // scrolling or resizing may have moved the parent since activation.
-            const trigger = regions.findLast(region => region.node === (panel.trigger || panel.origin?.node));
-            const triggerRow = trigger?.row ?? parent.row;
-            panelColumn = parent.column;
-            const below = viewportStart + viewportRows - triggerRow - 1;
-            const above = triggerRow - viewportStart;
-            panelRow = height <= below || below >= above ? triggerRow + 1 : triggerRow - height;
-          }
+          const value = value => String(typeof value === 'function' ? value() : value ?? '');
+          const naturalWidth = Math.max(3, measure('─ ' + panel.title + ' '), ...panel.items.map(node =>
+            node.type === 'field' ? Math.max(...node.value.split('\n').map(text => measure(text) + 3))
+              : measure(value(node.type === 'button' ? node.label : node.text)))) + 4;
+          const panelWidth = Math.min(width, naturalWidth);
+          // Resolve the opener again on every render: it can move when another
+          // control changes its label or the document is scrolled/reflowed.
+          const trigger = regions.find(region => region.node === (panel.trigger || panel.origin?.node));
+          const triggerTop = trigger?.row ?? (parent ? parent.row : startRow);
+          const triggerBottom = trigger ? triggerTop + (trigger.part !== undefined ? 3 : 1)
+            : parent ? parent.row + 1 : startRow + rootCount;
+          const below = viewportStart + viewportRows - triggerBottom;
+          const above = triggerTop - viewportStart;
+          const panelRow = height <= below || height > above ? triggerBottom : triggerTop - height;
+          const actualWidth = Math.max(3, panelWidth - 4, ...panel.items.filter(node => node.type === 'field')
+            .flatMap(node => node.value.split('\n').map(text => measure(text) + 3))) + 2;
+          const panelColumn = Math.max(viewportColumn, Math.min(trigger?.start ?? parent?.column ?? viewportColumn,
+            viewportColumn + width - actualWidth));
           columnOrigin = panelColumn;
           rowOrigin = panelRow - lines.length;
           box(panel, panelWidth);

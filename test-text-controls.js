@@ -310,3 +310,27 @@ assert.equal(inputContext.fillStyle, 'original');
 assert.equal(inputContext.font, 'original');
 assert.equal(inputContext.textBaseline, 'alphabetic', 'field rendering restores the previous canvas baseline');
 console.log('TravelEdit text input outline checks passed');
+
+{
+const anchored = createControls();
+const prefix = anchored.button('Before', () => {});
+const first = anchored.button('Top', () => anchored.open('Top menu').button('Choice', () => {}));
+const second = anchored.button('Bottom', () => anchored.open('Bottom menu').button('Choice', () => {}));
+anchored.setContent([[prefix, first], [prefix, second]], { layout: 'rows', style: 'box' });
+anchored.render({ startRow: 10, width: 60, viewportRows: 40, overlay: true });
+const topPosition = anchored.locate({ node: first, part: 1, column: 2 });
+anchored.activate(topPosition.row, topPosition.column);
+let positioned = anchored.render({ startRow: 10, width: 60, viewportRows: 40, overlay: true });
+assert.equal(positioned.overlay.row, 13, 'top row popup follows its own box, not both control rows');
+assert.equal(positioned.overlay.column, topPosition.column - 2, 'popup aligns with the clicked button');
+anchored.closeAll();
+anchored.render({ startRow: 10, width: 60, viewportRows: 17, overlay: true });
+const bottomPosition = anchored.locate({ node: second, part: 1, column: 2 });
+anchored.activate(bottomPosition.row, bottomPosition.column);
+positioned = anchored.render({ startRow: 10, width: 60, viewportRows: 17, overlay: true });
+assert.equal(positioned.overlay.row + positioned.overlay.lines.length, 13, 'bottom row popup ends immediately above its own box');
+assert.equal(positioned.overlay.column, bottomPosition.column - 2);
+anchored.destroy();
+console.log('TravelEdit popup trigger anchoring checks passed');
+
+}
