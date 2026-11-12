@@ -355,3 +355,32 @@ console.log('TravelEdit popup trigger anchoring checks passed');
   ui.destroy();
 }
 console.log('TravelEdit popup action bracket checks passed');
+
+{
+  const ui = createControls();
+  let usedGear = 0;
+  const main = ui.button('Review', () => {});
+  const gear = ui.button('⚙️', () => { usedGear++; ui.open('Options').button('Run', () => {}); });
+  const row = ui.segmented([main, gear]);
+  const toggle = ui.button('Compact Controls', () => {});
+  ui.setContent([[row], [toggle]], { layout: 'rows', style: 'box' });
+  ui.render({ startRow: 10, overlay: true });
+  const oldPosition = ui.locate({ node: toggle, part: 1, column: 2 });
+  const cursor = ui.capture(oldPosition.row, oldPosition.column);
+  ui.setContent([[row], [toggle]], { layout: 'rows', style: 'compact' });
+  let result = ui.render({ startRow: 10, overlay: true });
+  assert.equal(result.lines.length, 2);
+  assert.equal(result.lines[0], '〔 Review │ ⚙️ 〕');
+  assert.equal(ui.locate(cursor).row, 11, 'toggle cursor follows the new row');
+  const pos = ui.locate({ node: gear, column: 2 });
+  ui.activate(pos.row, pos.column);
+  result = ui.render({ startRow: 10, overlay: true });
+  assert.equal(usedGear, 1);
+  assert.equal(result.overlay.row, 11, 'compact popup anchors below its one-line trigger');
+  ui.closeAll();
+  ui.setContent([[row], [toggle]], { layout: 'rows', style: 'box' });
+  result = ui.render({ startRow: 10, overlay: true });
+  assert.equal(result.lines.length, 6);
+  ui.destroy();
+}
+console.log('TravelEdit compact segmented controls checks passed');

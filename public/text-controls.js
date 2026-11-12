@@ -155,7 +155,7 @@
       function roots() {
         const groups = rootLayout === 'rows' ? content : [content];
         for (const nodes of groups) {
-          if ((rootLayout === 'row' || rootLayout === 'rows') && buttonStyle === 'box' && nodes.length) {
+          if ((rootLayout === 'row' || rootLayout === 'rows') && (buttonStyle === 'box' || buttonStyle === 'compact') && nodes.length) {
             const cells = nodes.map(group => {
               const segments = group.type === 'segmented' ? group.segments : [group];
               let offset = 0;
@@ -166,19 +166,21 @@
                 offset += inner + 1;
                 return { node, label, inner, start, stop: offset + (index === segments.length - 1 ? 1 : 0) };
               });
-              return { group, parts, width: offset + 1, lines: [
+              return { group, parts, width: offset + 1, lines: buttonStyle === 'compact' ? [
+                '〔' + parts.map(part => ' ' + part.label + ' ').join('│') + '〕'
+              ] : [
                 '┌' + parts.map(part => '─'.repeat(part.inner)).join('┬') + '┐',
                 '│' + parts.map(part => ' ' + part.label + ' ').join('│') + '│',
                 '└' + parts.map(part => '─'.repeat(part.inner)).join('┴') + '┘'
               ] };
             });
-            for (let part = 0; part < 3; part++) {
+            for (let part = 0; part < cells[0].lines.length; part++) {
               const index = startRow + lines.length;
               let offset = 0;
               for (const cell of cells) {
                 for (const segment of cell.parts) if (segment.node.type === 'button') {
                   regions.push({ row: index, start: offset + segment.start, stop: offset + segment.stop,
-                    node: segment.node, part, disabled: cell.group.disabled || segment.node.disabled });
+                    node: segment.node, part: buttonStyle === 'compact' ? undefined : part, disabled: cell.group.disabled || segment.node.disabled });
                 }
                 offset += cell.width + 1;
               }
@@ -297,7 +299,8 @@
       },
       capture(row, column) { const region = hit(row, column) || regions.find(region => region.row === row && region.node.type === 'field'); return region ? { node: region.node, fieldLine: region.fieldLine, part: region.part, column: column - region.start } : null; },
       locate(cursor) {
-        const region = cursor && regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine && region.part === cursor.part);
+        const region = cursor && (regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine && region.part === cursor.part)
+          || regions.find(region => region.node === cursor.node && region.fieldLine === cursor.fieldLine && (region.part === 1 || region.part === undefined)));
         return region ? { row: region.row, column: region.start + Math.min(cursor.column, region.stop - region.start - 1) } : null;
       },
       fieldAt(row) { return regions.find(region => region.row === row && region.node.type === 'field' && !region.disabled) || null; },
