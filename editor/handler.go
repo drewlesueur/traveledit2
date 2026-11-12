@@ -169,7 +169,7 @@ func validTab(kind, fullPath string) bool {
 		return fullPath == "cmd"
 	}
 	id, err := strconv.ParseInt(fullPath, 10, 64)
-	return (kind == "devtracker" || kind == "devtracker-diff") && err == nil && id > 0 && strconv.FormatInt(id, 10) == fullPath
+	return (kind == "devtracker" || kind == "devtracker-diff" || kind == "devtracker-accept-diff") && err == nil && id > 0 && strconv.FormatInt(id, 10) == fullPath
 }
 func (h *Handler) newWorkspace(name string) *Workspace {
 	h.nextID++
